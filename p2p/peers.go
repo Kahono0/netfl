@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/kahono0/netfl/msgs"
+	"github.com/kahono0/netfl/utils"
 	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
@@ -32,8 +34,25 @@ func GetPeerByID(peerID string) *peer.AddrInfo {
 func listenForPeers(peerChan chan peer.AddrInfo) {
 	for {
 		peer := <-peerChan
-		fmt.Printf("Found peer: %v\n", peer)
+		fmt.Printf("Found peer: %s\n", utils.AsPrettyJson(peer))
 		Peers = append(Peers, peer)
+
+		go func() {
+			msg, err := msgs.NewMessage(msgs.RequestMovies, []byte("Requesting movies"))
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Error creating message")
+				return
+			}
+
+			err = SendMessage(peer, msg)
+			if err != nil {
+				fmt.Println("Error sending message")
+				return
+			}
+
+			fmt.Println("Sent message")
+		}()
 	}
 }
 
@@ -49,20 +68,27 @@ func removePeer(peer peer.AddrInfo) {
 	}
 }
 
-func PingPeers(ctx context.Context, host host.Host, cfg *P2Pconfig) {
+func Connect(host host.Host, peer peer.AddrInfo) error {
+	if host.Network().Connectedness(peer.ID) != network.Connected {
+		return host.Connect(context.Background(), peer)
+	}
+
+	return nil
+}
+
+func PingPeers(ctx context.Context, host host.Host, protocalID string) {
 	for {
 		for _, peer := range Peers {
 			if peer.ID == host.ID() {
 				continue
 			}
 
-			if err := host.Connect(ctx, peer); err != nil {
-				fmt.Println("Connection failed:", err)
+			if err := Connect(host, peer); err != nil {
 				removePeer(peer)
 				continue
 			}
 
-			s, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
+			s, err := host.NewStream(ctx, peer.ID, protocol.ID(protocalID))
 			if err != nil {
 				fmt.Printf("Error opening stream to %s: %s\n", peer.ID, err)
 				removePeer(peer)

@@ -25,3 +25,8 @@ func HandleSample(msg *Message, stream network.Stream) error {
 	fmt.Printf("\n\nReceived sample message %s\n\n", string(msg.Data))
 	return nil
 }
+
+func HandleRequestMovies(msg *Message, stream network.Stream) error {
+	fmt.Printf("\n\nReceived request for movies %s\n\n", string(msg.Data))
+	return nil
+}

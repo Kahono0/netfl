@@ -17,13 +17,15 @@ type MessageType struct {
 }
 
 var handlers = map[MessageTypeID]func(*Message, network.Stream) error{
-	Ping:   HandlePing,
-	Sample: HandleSample,
+	Ping:          HandlePing,
+	Sample:        HandleSample,
+	RequestMovies: HandleRequestMovies,
 }
 
 const (
 	Ping MessageTypeID = iota
 	Sample
+	RequestMovies
 )
 
 // utility to chack if method type is valid

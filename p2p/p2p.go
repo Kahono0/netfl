@@ -17,11 +17,24 @@ import (
 	"github.com/multiformats/go-multiaddr"
 )
 
+var Host host.Host
+
 type P2Pconfig struct {
 	RendezvousString string
 	ProtocolID       string
 	ListenHost       string
 	ListenPort       int
+}
+
+var config *P2Pconfig
+
+func InitConfig(rendezvousString, protocolID, listenHost string, listenPort int) {
+	config = &P2Pconfig{
+		RendezvousString: rendezvousString,
+		ProtocolID:       protocolID,
+		ListenHost:       listenHost,
+		ListenPort:       listenPort,
+	}
 }
 
 func WriteMessage(rw *bufio.ReadWriter, msg *msgs.Message) error {
@@ -33,20 +46,28 @@ func WriteMessage(rw *bufio.ReadWriter, msg *msgs.Message) error {
 	return rw.Flush()
 }
 
-func SendMessage(ctx context.Context, host host.Host, peerID peer.ID, msg *msgs.Message, protocalID string) error {
-	s, err := host.NewStream(ctx, peerID, protocol.ID(protocalID))
+func SendMessage(peer peer.AddrInfo, msg *msgs.Message) error {
+	ctx := context.Background()
+	if err := Connect(Host, peer); err != nil {
+		return err
+	}
+	s, err := Host.NewStream(ctx, peer.ID, protocol.ID(config.ProtocolID))
 	if err != nil {
 		return err
 	}
 
-	rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
+	return SendWithStream(s, msg)
+}
+
+func SendWithStream(stream network.Stream, msg *msgs.Message) error {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	return WriteMessage(rw, msg)
 }
 
 func handleStream(stream network.Stream) {
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-	go readData(rw, stream)
+	readData(rw, stream)
 }
 
 func readData(rw *bufio.ReadWriter, stream network.Stream) {
@@ -63,8 +84,8 @@ func readData(rw *bufio.ReadWriter, stream network.Stream) {
 	}
 }
 
-func Init(ctx context.Context, cfg *P2Pconfig) *host.Host {
-	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
+func Init() {
+	fmt.Printf("[*] Listening on: %s with port: %d\n", config.ListenHost, config.ListenPort)
 
 	r := rand.Reader
 
@@ -73,7 +94,7 @@ func Init(ctx context.Context, cfg *P2Pconfig) *host.Host {
 		panic(err)
 	}
 
-	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", cfg.ListenHost, cfg.ListenPort))
+	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", config.ListenHost, config.ListenPort))
 
 	host, err := libp2p.New(
 		libp2p.ListenAddrs(sourceMultiAddr),
@@ -83,13 +104,13 @@ func Init(ctx context.Context, cfg *P2Pconfig) *host.Host {
 		panic(err)
 	}
 
-	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
+	host.SetStreamHandler(protocol.ID(config.ProtocolID), handleStream)
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID())
+	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", config.ListenHost, config.ListenPort, host.ID())
 
-	peerChan := initMDNS(host, cfg.RendezvousString)
+	peerChan := initMDNS(host, config.RendezvousString)
 
 	go listenForPeers(peerChan)
 
-	return &host
+	Host = host
 }

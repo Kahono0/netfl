@@ -190,6 +190,15 @@ func (r *MovieRepo) String() string {
 	return str
 }
 
+func (r *MovieRepo) ToJSON() string {
+	if !r.Loaded {
+		r.Load()
+	}
+
+	jsonB, _ := json.Marshal(r.Movies)
+	return string(jsonB)
+}
+
 func (r *MovieRepo) GetMovies(w http.ResponseWriter, rq *http.Request) {
 	if !r.Loaded {
 		r.Load()
