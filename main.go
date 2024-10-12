@@ -1,22 +1,52 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 
+	"github.com/kahono0/netfl/handlers"
 	"github.com/kahono0/netfl/p2p"
 	"github.com/kahono0/netfl/repo"
 )
 
-func main() {
+func createListener() net.Listener {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic(err)
+	}
 
-	movieRepo := repo.NewMovieRepo(".", "http://localhost:8080", false)
-	movieRepo.Load()
-	fmt.Println(movieRepo)
+	return listener
+}
 
-	go p2p.Init()
-
+func setUpRoutes(movieRepo *repo.MovieRepo) {
+	http.HandleFunc("/peers", handlers.ShowPeers)
+	http.HandleFunc("/send", handlers.SendSampleMsg)
 	http.HandleFunc("/movies", movieRepo.GetMovies)
+}
 
-	http.ListenAndServe(":8080", nil)
+func main() {
+	ctx := context.Background()
+
+	config := parseFlags()
+	host := p2p.Init(ctx, &config.P2Pconfig)
+	go p2p.PingPeers(ctx, *host, &config.P2Pconfig)
+
+	listener := createListener()
+
+	defer listener.Close()
+
+	serverPort := listener.Addr().(*net.TCPAddr).Port
+
+	movieRepo := repo.New(serverPort, ".", false)
+	setUpRoutes(movieRepo)
+
+	fmt.Printf("Listening on http://localhost:%d\n", serverPort)
+
+	log.Fatal(http.Serve(listener, nil))
+
+	fmt.Println("Exiting...")
+
 }

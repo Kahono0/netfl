@@ -97,6 +97,16 @@ type MovieRepo struct {
 	Loaded   bool
 }
 
+func New(port int, dir string, log bool) *MovieRepo {
+	movieRepoUrl := fmt.Sprintf("http://%s:%d", utils.GetPrivateIP(), port)
+
+	movieRepo := NewMovieRepo(dir, movieRepoUrl, log)
+
+	movieRepo.Load()
+
+	return movieRepo
+}
+
 func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
 	return &MovieRepo{
 		Dir:      dir,
@@ -107,6 +117,10 @@ func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
 }
 
 func (r *MovieRepo) Load() error {
+	if r.Dir == "" {
+		return nil
+	}
+
 	var movies []Movie
 
 	err := filepath.Walk(r.Dir, func(path string, info os.FileInfo, err error) error {
