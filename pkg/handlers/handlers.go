@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kahono0/netfl/pkg/msgs"
+	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/kahono0/netfl/pkg/putils"
 
 	"github.com/kahono0/netfl/repo"
@@ -76,11 +77,19 @@ func (h *Handler) HandleRequestMovies(msg *msgs.Message, stream network.Stream) 
 		return err
 	}
 
-	return putils.SendWithStream(newMsg, stream)
+	peerID := stream.Conn().RemotePeer()
+	return putils.SendToUnkown(h.Host, peerID, newMsg, h.ProtocolID)
 }
 
 func (h *Handler) HandleResponseMovies(msg *msgs.Message, stream network.Stream) error {
-	fmt.Printf("\n\nReceived response for movies %s\n\n", string(msg.Data))
+	movies := string(msg.Data)
+
+	err := repo.Repo.AddFromJSON(movies)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\n\nReceived movies from peer %s\n\n", stream.Conn().RemotePeer())
 	return nil
 }
 
@@ -100,4 +109,13 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 	}
 
 	return putils.SendMessage(h.Host, peer, msg, h.ProtocolID)
+}
+
+func (h *Handler) PingPeers(ps []peer.AddrInfo) {
+	for _, peer := range ps {
+		err := h.Ping(peer)
+		if err != nil {
+			peers.RemovePeer(peer)
+		}
+	}
 }

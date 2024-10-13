@@ -78,6 +78,7 @@ type Movie struct {
 	ThumbNailUrl           string
 	IsAcceptedMimeType     bool
 	IsPlayableByWebBrowser bool
+	Hash                   string
 }
 
 func (m *Movie) CreateThumbnail(hostAdrr string) error {
@@ -160,6 +161,9 @@ func (r *MovieRepo) Load() error {
 			return err
 		}
 
+		hash := utils.GetFileHash(path)
+		movie.Hash = hash
+
 		movies = append(movies, movie)
 
 		fmt.Println("Time to create:", time.Since(timeToCreate))
@@ -197,6 +201,35 @@ func (r *MovieRepo) ToJSON() string {
 
 	jsonB, _ := json.Marshal(r.Movies)
 	return string(jsonB)
+}
+
+func (r *MovieRepo) ContainsFile(hash string) bool {
+	for _, m := range r.Movies {
+		if m.Hash == hash {
+			return true
+		}
+
+	}
+
+	return false
+}
+
+func (r *MovieRepo) AddFromJSON(jsonStr string) error {
+	var movies []Movie
+	err := json.Unmarshal([]byte(jsonStr), &movies)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range movies {
+		if m.Hash == "" || r.ContainsFile(m.Hash) {
+			continue
+		}
+
+		r.Movies = append(r.Movies, m)
+	}
+
+	return nil
 }
 
 func (r *MovieRepo) GetMovies(w http.ResponseWriter, rq *http.Request) {

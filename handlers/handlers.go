@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/kahono0/netfl/pkg/msgs"
-	"github.com/kahono0/netfl/pkg/p2p"
+	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/kahono0/netfl/pkg/putils"
 	"github.com/kahono0/netfl/utils"
 	"github.com/libp2p/go-libp2p/core/host"
 )
 
 func ShowPeers(w http.ResponseWriter, r *http.Request) {
-	peers := p2p.Peers
+	peers := peers.Peers
 
 	for _, peer := range peers {
 		fmt.Fprintf(w, "%s\n", peer.ID)
@@ -26,7 +26,7 @@ func SendSampleMsg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	peer := p2p.GetPeerByID(peerID)
+	peer := peers.GetPeerByID(peerID)
 	if peer == nil {
 		fmt.Fprintf(w, "No peer found with ID %s\n", peerID)
 		return
@@ -40,7 +40,7 @@ func SendSampleMsg(w http.ResponseWriter, r *http.Request) {
 func SendSampleMsgHandler(host host.Host, protocolID string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		peerID := r.URL.Query().Get("peer")
-		peer := p2p.GetPeerByID(peerID)
+		peer := peers.GetPeerByID(peerID)
 		if peer == nil {
 			fmt.Fprintf(w, "No peer found with ID %s\n", peerID)
 			return

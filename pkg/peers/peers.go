@@ -1,11 +1,9 @@
-package p2p
+package peers
 
 import (
 	"fmt"
 	"sync"
-	"time"
 
-	"github.com/kahono0/netfl/pkg/handlers"
 	"github.com/kahono0/netfl/utils"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -27,7 +25,7 @@ func GetPeerByID(peerID string) *peer.AddrInfo {
 	return nil
 }
 
-func removePeer(peer peer.AddrInfo) {
+func RemovePeer(peer peer.AddrInfo) {
 	peersMutex.Lock()
 	defer peersMutex.Unlock()
 
@@ -39,26 +37,7 @@ func removePeer(peer peer.AddrInfo) {
 	}
 }
 
-func PingPeers(host host.Host) {
-	for {
-		for _, peer := range Peers {
-			if peer.ID == host.ID() {
-				continue
-			}
-
-			err := handlers.MsgHandler.Ping(peer)
-			if err != nil {
-				fmt.Printf("Error pinging peer %s: %s\n", peer.ID, err)
-				removePeer(peer)
-			}
-
-		}
-
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func listenForPeers(peerChan chan peer.AddrInfo, host host.Host, protocalID string, handleNewPeer func(peer.AddrInfo, host.Host, string) error) {
+func ListenForPeers(peerChan chan peer.AddrInfo, host host.Host, protocalID string, handleNewPeer func(peer.AddrInfo, host.Host, string) error) {
 	for {
 		peer := <-peerChan
 		fmt.Printf("Found peer: %s\n", utils.AsPrettyJson(peer))

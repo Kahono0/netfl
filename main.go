@@ -10,6 +10,7 @@ import (
 	"github.com/kahono0/netfl/handlers"
 	mhandlers "github.com/kahono0/netfl/pkg/handlers"
 	"github.com/kahono0/netfl/pkg/p2p"
+	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/libp2p/go-libp2p/core/host"
 
 	"github.com/kahono0/netfl/repo"
@@ -63,7 +64,7 @@ func main() {
 	host := p2p.Init(config.P2PConfig, mhandlers.HandleNewPeer)
 	setUpHandler(host, config.ProtocolID)
 
-	go p2p.PingPeers(host)
+	go mhandlers.MsgHandler.PingPeers(peers.Peers)
 
 	listener := createListener()
 

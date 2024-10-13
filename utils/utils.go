@@ -40,3 +40,13 @@ func GetPrivateIP() string {
 
 	return ""
 }
+
+func GetFileHash(path string) string {
+	cmd := exec.Command("sha256sum", path)
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+
+	return string(output)[:64]
+}

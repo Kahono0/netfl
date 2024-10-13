@@ -3,8 +3,10 @@ package putils
 import (
 	"bufio"
 	"context"
+	"fmt"
 
 	"github.com/kahono0/netfl/pkg/msgs"
+	"github.com/kahono0/netfl/pkg/peers"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -43,16 +45,16 @@ func SendMessage(host host.Host, peer peer.AddrInfo, msg *msgs.Message, protocol
 	return WriteMessage(rw, msg)
 }
 
+func SendToUnkown(host host.Host, peerID peer.ID, msg *msgs.Message, protocolID string) error {
+	peer := peers.GetPeerByID(peerID.String())
+	if peer == nil {
+		return fmt.Errorf("no peer found with ID %s", peerID)
+	}
+
+	return SendMessage(host, *peer, msg, protocolID)
+}
+
 func SendWithStream(msg *msgs.Message, stream network.Stream) error {
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	return WriteMessage(rw, msg)
-}
-
-func RequestMovies(host host.Host, peer peer.AddrInfo, protocolID string) error {
-	msg, err := msgs.NewMessage(msgs.RequestMovies, []byte{})
-	if err != nil {
-		return err
-	}
-
-	return SendMessage(host, peer, msg, protocolID)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/kahono0/netfl/pkg/handlers"
 	"github.com/kahono0/netfl/pkg/msgs"
+	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -70,7 +71,7 @@ func Init(cfg P2PConfig, handleNewPeer func(peer.AddrInfo, host.Host, string) er
 
 	peerChan := initMDNS(host, cfg.RendezvousString)
 
-	go listenForPeers(peerChan, host, cfg.ProtocolID, handleNewPeer)
+	go peers.ListenForPeers(peerChan, host, cfg.ProtocolID, handleNewPeer)
 
 	return host
 }
