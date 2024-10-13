@@ -14,6 +14,8 @@ import (
 	"github.com/kahono0/netfl/utils"
 )
 
+var Repo *MovieRepo
+
 var acceptedMimeTypes = []string{
 	"video/mp4",           // MP4
 	"video/x-msvideo",     // AVI
@@ -97,14 +99,12 @@ type MovieRepo struct {
 	Loaded   bool
 }
 
-func New(port int, dir string, log bool) *MovieRepo {
+func Init(port int, dir string, log bool) {
 	movieRepoUrl := fmt.Sprintf("http://%s:%d", utils.GetPrivateIP(), port)
 
-	movieRepo := NewMovieRepo(dir, movieRepoUrl, log)
+	Repo = NewMovieRepo(dir, movieRepoUrl, log)
 
-	movieRepo.Load()
-
-	return movieRepo
+	Repo.Load()
 }
 
 func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {

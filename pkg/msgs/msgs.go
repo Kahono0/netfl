@@ -3,8 +3,6 @@ package msgs
 import (
 	"bufio"
 	"errors"
-
-	"github.com/libp2p/go-libp2p/core/network"
 )
 
 var ErrUnknownMessageType = errors.New("unknown message type")
@@ -12,32 +10,20 @@ var ErrUnknownMessageType = errors.New("unknown message type")
 type MessageTypeID uint
 
 type MessageType struct {
-	Code    MessageTypeID
-	Handler func(*Message, network.Stream) error
-}
-
-var handlers = map[MessageTypeID]func(*Message, network.Stream) error{
-	Ping:          HandlePing,
-	Sample:        HandleSample,
-	RequestMovies: HandleRequestMovies,
+	Code MessageTypeID
 }
 
 const (
 	Ping MessageTypeID = iota
 	Sample
 	RequestMovies
+	ResponseMovies
 )
 
 // utility to chack if method type is valid
 func NewMessageType(t MessageTypeID) (*MessageType, error) {
-	handler, ok := handlers[t]
-	if !ok {
-		return nil, ErrUnknownMessageType
-	}
-
 	return &MessageType{
-		Code:    t,
-		Handler: handler,
+		Code: t,
 	}, nil
 }
 
@@ -87,8 +73,4 @@ func DecodeMessage(data []byte) (*Message, error) {
 		Type: *msgType,
 		Data: data[1 : len(data)-1],
 	}, nil
-}
-
-func (m *Message) Handle(stream network.Stream) error {
-	return m.Type.Handler(m, stream)
 }

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kahono0/netfl/msgs"
-	"github.com/kahono0/netfl/p2p"
+	"github.com/kahono0/netfl/pkg/msgs"
+	"github.com/kahono0/netfl/pkg/p2p"
+	"github.com/kahono0/netfl/pkg/putils"
 	"github.com/kahono0/netfl/utils"
+	"github.com/libp2p/go-libp2p/core/host"
 )
 
 func ShowPeers(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +37,7 @@ func SendSampleMsg(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Sending message to %s\n", peerID)
 }
 
-func SendSampleMsgHandler() http.HandlerFunc {
+func SendSampleMsgHandler(host host.Host, protocolID string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		peerID := r.URL.Query().Get("peer")
 		peer := p2p.GetPeerByID(peerID)
@@ -50,7 +52,7 @@ func SendSampleMsgHandler() http.HandlerFunc {
 			return
 		}
 
-		err = p2p.SendMessage(*peer, msg)
+		err = putils.SendMessage(host, *peer, msg, protocolID)
 		if err != nil {
 			fmt.Fprintf(w, "Error sending message: %s\n", err)
 			return

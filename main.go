@@ -8,16 +8,16 @@ import (
 	"net/http"
 
 	"github.com/kahono0/netfl/handlers"
-	"github.com/kahono0/netfl/p2p"
+	mhandlers "github.com/kahono0/netfl/pkg/handlers"
+	"github.com/kahono0/netfl/pkg/p2p"
+	"github.com/libp2p/go-libp2p/core/host"
+
 	"github.com/kahono0/netfl/repo"
 )
 
 type config struct {
-	RendezvousString string
-	ProtocolID       string
-	ListenHost       string
-	ListenPort       int
-	path             string
+	p2p.P2PConfig
+	path string
 }
 
 func parseFlags() *config {
@@ -44,28 +44,26 @@ func createListener() net.Listener {
 	return listener
 }
 
-func setUpRoutes(movieRepo *repo.MovieRepo) {
+func setUpRoutes(host host.Host, protocolID string) {
 	http.HandleFunc("/peers", handlers.ShowPeers)
-	http.HandleFunc("/send", handlers.SendSampleMsgHandler())
-	http.HandleFunc("/movies", movieRepo.GetMovies)
+	http.HandleFunc("/send", handlers.SendSampleMsgHandler(host, protocolID))
+	http.HandleFunc("/movies", repo.Repo.GetMovies)
 }
 
-func p2pConfig(c *config) *p2p.P2Pconfig {
-	return &p2p.P2Pconfig{
-		RendezvousString: c.RendezvousString,
-		ProtocolID:       c.ProtocolID,
-		ListenHost:       c.ListenHost,
-		ListenPort:       c.ListenPort,
-	}
+func setUpHandler(host host.Host, protocolID string) {
+	mhandlers.NewHandler(host, protocolID)
+
+	mhandlers.MsgHandler.RegisterHandlers()
+
 }
 
 func main() {
 	config := parseFlags()
 
-	p2p.InitConfig(config.RendezvousString, config.ProtocolID, config.ListenHost, config.ListenPort)
+	host := p2p.Init(config.P2PConfig, mhandlers.HandleNewPeer)
+	setUpHandler(host, config.ProtocolID)
 
-	p2p.Init()
-	// go p2p.PingPeers(ctx, host, p2pConfig.ProtocolID)
+	go p2p.PingPeers(host)
 
 	listener := createListener()
 
@@ -73,9 +71,9 @@ func main() {
 
 	serverPort := listener.Addr().(*net.TCPAddr).Port
 
-	movieRepo := repo.New(serverPort, config.path, false)
-	fmt.Printf("Movies:\n%s\n", movieRepo.ToJSON())
-	setUpRoutes(movieRepo)
+	repo.Init(serverPort, config.path, false)
+	fmt.Printf("Movies:\n%s\n", repo.Repo.ToJSON())
+	setUpRoutes(host, config.ProtocolID)
 
 	fmt.Printf("Listening on http://localhost:%d\n", serverPort)
 
