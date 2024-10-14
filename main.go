@@ -7,18 +7,17 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/kahono0/netfl/handlers"
 	mhandlers "github.com/kahono0/netfl/pkg/handlers"
 	"github.com/kahono0/netfl/pkg/p2p"
-	"github.com/kahono0/netfl/pkg/peers"
-	"github.com/libp2p/go-libp2p/core/host"
-
 	"github.com/kahono0/netfl/repo"
+	"github.com/kahono0/netfl/router"
+	"github.com/libp2p/go-libp2p/core/host"
 )
 
 type config struct {
 	p2p.P2PConfig
-	path string
+	Path  string
+	SPort int
 }
 
 func parseFlags() *config {
@@ -28,27 +27,22 @@ func parseFlags() *config {
 	flag.StringVar(&f.ListenHost, "host", "0.0.0.0", "The bootstrap node host listen address\n")
 	flag.StringVar(&f.ProtocolID, "pid", "/chat/1.1.0", "Sets a protocol id for stream headers")
 	flag.IntVar(&f.ListenPort, "port", 0, "node listen port (0 pick a random unused port)")
+	flag.IntVar(&f.SPort, "sport", 0, "server port")
 
-	flag.StringVar(&f.path, "path", "", "Path to store movie data")
+	flag.StringVar(&f.Path, "path", "", "Path to store movie data")
 
 	flag.Parse()
 
 	return f
 }
 
-func createListener() net.Listener {
-	listener, err := net.Listen("tcp", ":0")
+func createListener(port int) net.Listener {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
 	}
 
 	return listener
-}
-
-func setUpRoutes(host host.Host, protocolID string) {
-	http.HandleFunc("/peers", handlers.ShowPeers)
-	http.HandleFunc("/send", handlers.SendSampleMsgHandler(host, protocolID))
-	http.HandleFunc("/movies", repo.Repo.GetMovies)
 }
 
 func setUpHandler(host host.Host, protocolID string) {
@@ -61,20 +55,21 @@ func setUpHandler(host host.Host, protocolID string) {
 func main() {
 	config := parseFlags()
 
-	host := p2p.Init(config.P2PConfig, mhandlers.HandleNewPeer)
-	setUpHandler(host, config.ProtocolID)
+	// host := p2p.Init(config.P2PConfig, mhandlers.HandleNewPeer)
+	// setUpHandler(host, config.ProtocolID)
 
-	go mhandlers.MsgHandler.PingPeers(peers.Peers)
+	// go mhandlers.MsgHandler.PingPeers(peers.Peers)
 
-	listener := createListener()
+	listener := createListener(8081)
 
 	defer listener.Close()
 
 	serverPort := listener.Addr().(*net.TCPAddr).Port
 
-	repo.Init(serverPort, config.path, false)
-	fmt.Printf("Movies:\n%s\n", repo.Repo.ToJSON())
-	setUpRoutes(host, config.ProtocolID)
+	repo.Init(serverPort, config.Path, false)
+	// fmt.Printf("Movies:\n%s\n", repo.Repo.ToJSON())
+	// router.SetUpRoutes(host, config.ProtocolID)
+	router.SetUpRoutes()
 
 	fmt.Printf("Listening on http://localhost:%d\n", serverPort)
 
