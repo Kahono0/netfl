@@ -72,7 +72,6 @@ func isPlayableByWebBrowser(mime *mimetype.MIME) bool {
 
 type Movie struct {
 	Name                   string
-	Path                   string
 	MovieUrl               string
 	MimeType               string
 	ThumbNailUrl           string
@@ -81,14 +80,14 @@ type Movie struct {
 	Hash                   string
 }
 
-func (m *Movie) CreateThumbnail(hostAdrr string) error {
-	outputFile := fmt.Sprintf("%s.thumb.jpg", m.Path)
-	err := utils.ExtractThumbnail(m.Path, outputFile, thumbNailTime)
+func (m *Movie) CreateThumbnail(hostAdrr string, path string) error {
+	outputFile := fmt.Sprintf("%s.thumb.jpg", path)
+	err := utils.ExtractThumbnail(path, outputFile, thumbNailTime)
 	if err != nil {
 		return err
 	}
 
-	m.ThumbNailUrl = fmt.Sprintf("%s/%s", hostAdrr, filepath.Base(outputFile))
+	m.ThumbNailUrl = fmt.Sprintf("%s/thumb%s", hostAdrr, outputFile[len(Repo.Dir):])
 	return nil
 }
 
@@ -101,11 +100,11 @@ type MovieRepo struct {
 }
 
 func Init(port int, dir string, log bool) {
-	movieRepoUrl := fmt.Sprintf("http://%s:%d", utils.GetPrivateIP(), port)
+	movieRepoUrl := fmt.Sprintf("http://%s:%d/movies", utils.GetPrivateIP(), port)
 
 	Repo = NewMovieRepo(dir, movieRepoUrl, log)
 
-	Repo.Load()
+	go Repo.Load()
 }
 
 func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
@@ -121,8 +120,6 @@ func (r *MovieRepo) Load() error {
 	if r.Dir == "" {
 		return nil
 	}
-
-	var movies []Movie
 
 	err := filepath.Walk(r.Dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -149,22 +146,22 @@ func (r *MovieRepo) Load() error {
 
 		movie := Movie{
 			Name:                   filepath.Base(path),
-			Path:                   path,
-			MovieUrl:               fmt.Sprintf("%s/%s", r.HostAddr, filepath.Base(path)),
+			MovieUrl:               fmt.Sprintf("%s%s", r.HostAddr, path[len(r.Dir):]),
 			MimeType:               mimeTypeStr,
 			IsAcceptedMimeType:     true,
 			IsPlayableByWebBrowser: isPlayableByWebBrowser(mime),
 		}
 
-		err = movie.CreateThumbnail(r.HostAddr)
-		if err != nil {
-			return err
-		}
-
 		hash := utils.GetFileHash(path)
 		movie.Hash = hash
 
-		movies = append(movies, movie)
+		ThumbNailGenWorkerInstance.AddJob(Job{
+			Movie:    movie,
+			HostAddr: r.HostAddr[:len(r.HostAddr)-7],
+			Path:     path,
+		})
+
+		r.Movies = append(r.Movies, movie)
 
 		fmt.Println("Time to create:", time.Since(timeToCreate))
 
@@ -175,10 +172,26 @@ func (r *MovieRepo) Load() error {
 		return err
 	}
 
-	r.Movies = movies
 	r.Loaded = true
 
 	return nil
+}
+
+func (r *MovieRepo) UpdateMovie(m Movie) {
+	for i, movie := range r.Movies {
+		if movie.Hash == m.Hash {
+			r.Movies[i] = m
+			break
+		}
+	}
+}
+
+func (r *MovieRepo) GetMovies() []Movie {
+	if !r.Loaded {
+		r.Load()
+	}
+
+	return r.Movies
 }
 
 func (r *MovieRepo) String() string {
@@ -195,10 +208,6 @@ func (r *MovieRepo) String() string {
 }
 
 func (r *MovieRepo) ToJSON() string {
-	if !r.Loaded {
-		r.Load()
-	}
-
 	jsonB, _ := json.Marshal(r.Movies)
 	return string(jsonB)
 }
@@ -214,13 +223,7 @@ func (r *MovieRepo) ContainsFile(hash string) bool {
 	return false
 }
 
-func (r *MovieRepo) AddFromJSON(jsonStr string) error {
-	var movies []Movie
-	err := json.Unmarshal([]byte(jsonStr), &movies)
-	if err != nil {
-		return err
-	}
-
+func (r *MovieRepo) AddMovies(movies []Movie) {
 	for _, m := range movies {
 		if m.Hash == "" || r.ContainsFile(m.Hash) {
 			continue
@@ -228,22 +231,18 @@ func (r *MovieRepo) AddFromJSON(jsonStr string) error {
 
 		r.Movies = append(r.Movies, m)
 	}
-
-	return nil
 }
 
-func (r *MovieRepo) GetMovies(w http.ResponseWriter, rq *http.Request) {
-	if !r.Loaded {
-		r.Load()
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	err := json.NewEncoder(w).Encode(r.Movies)
+func (r *MovieRepo) AddFromJSON(jsonStr string) error {
+	var movies []Movie
+	err := json.Unmarshal([]byte(jsonStr), &movies)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
+
+	r.AddMovies(movies)
+
+	return nil
 }
 
 func (r *MovieRepo) DetectMimeType(file string) {

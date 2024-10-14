@@ -1,12 +1,9 @@
 package p2p
 
 import (
-	"bufio"
 	"crypto/rand"
 	"fmt"
 
-	"github.com/kahono0/netfl/pkg/handlers"
-	"github.com/kahono0/netfl/pkg/msgs"
 	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -23,29 +20,11 @@ type P2PConfig struct {
 	ProtocolID       string
 	ListenHost       string
 	ListenPort       int
+	StreamHandler    func(network.Stream)
+	NewPeerHandler   func(peer.AddrInfo, host.Host, string) error
 }
 
-func handleStream(stream network.Stream) {
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	defer stream.Close()
-
-	readData(rw, stream)
-}
-
-func readData(rw *bufio.ReadWriter, stream network.Stream) {
-	msg, err := msgs.NewFromReader(rw.Reader)
-	if err != nil {
-		fmt.Println("Error reading message")
-		return
-	}
-	err = handlers.MsgHandler.HandleMessage(msg, stream)
-	if err != nil {
-		fmt.Println("Error handling message")
-		return
-	}
-}
-
-func Init(cfg P2PConfig, handleNewPeer func(peer.AddrInfo, host.Host, string) error) host.Host {
+func Init(cfg P2PConfig) host.Host {
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
 	r := rand.Reader
@@ -65,13 +44,13 @@ func Init(cfg P2PConfig, handleNewPeer func(peer.AddrInfo, host.Host, string) er
 		panic(err)
 	}
 
-	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
+	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), cfg.StreamHandler)
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID())
 
 	peerChan := initMDNS(host, cfg.RendezvousString)
 
-	go peers.ListenForPeers(peerChan, host, cfg.ProtocolID, handleNewPeer)
+	go peers.ListenForPeers(peerChan, host, cfg.ProtocolID, cfg.NewPeerHandler)
 
 	return host
 }

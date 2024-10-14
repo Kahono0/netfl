@@ -3,7 +3,7 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = []
+  args_bin = ["--port", "6666", "--sport", "8080"]
   bin = "./tmp/main"
   cmd = "templ generate && go build -o ./tmp/main main.go"
   delay = 0

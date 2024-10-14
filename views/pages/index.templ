@@ -1,6 +1,9 @@
 package pages
 
-import "github.com/kahono0/netfl/repo"
+import (
+	"github.com/kahono0/netfl/pkg/peers"
+	"github.com/kahono0/netfl/repo"
+)
 
 templ Layout() {
 	<!DOCTYPE html>
@@ -8,68 +11,95 @@ templ Layout() {
 		<head>
 			<link rel="stylesheet" href="/static/output.css"/>
 			<style>
-                body {
-                    overflow-x: hidden;
-                    overflow-y: scroll;
-                    scrollbar-width: none;
-                    -ms-overflow-style: none;
-                }
+               :root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb:214, 219, 220 ;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+
     </style>
 		</head>
-		<body class="bg-black min-h-screen w-screen">
+		<body class="h-screen w-screen">
 			{ children... }
 		</body>
 	</html>
 }
 
-templ Hero(movie repo.Movie) {
-	<section class="relative h-[80vh]">
-		<img src="/static/Black.Mirror.S01E01.720p.WEBRip.x264-GalaxyTV.mkv.thumb.jpg" height="1080" width="1920" alt="Stranger Things" class="w-full h-full object-cover"/>
-		<div class="absolute inset-0 bg-gradient-to-r from-black to-transparent"></div>
-		<div class="text-white absolute bottom-0 left-0 p-8 w-full md:w-1/2">
-			<h1 class="text-4xl md:text-5xl font-bold mb-4">{ movie.Name }</h1>
-			<p class="text-lg mb-6">{ movie.MovieUrl }</p>
-			<div class="flex space-x-4">
-				<button class="bg-white text-black hover:bg-gray-200 py-2 px-4 rounded flex items-center">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
-					</svg>
-					Play
-				</button>
-				<button class="bg-gray-500 bg-opacity-50 hover:bg-opacity-75 py-2 px-4 rounded flex items-center">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-					</svg>
-					More Info
-				</button>
+templ OnlineUser(peer peers.PeerInfo) {
+	<div class="hs-tooltip inline-block">
+		<a class="hs-tooltip-toggle relative inline-block" href="#">
+			<img class="inline-block size-[46px] rounded-full" src={ peer.Avatar } alt="Avatar"/>
+			<span class="absolute bottom-0 end-0 block size-3 rounded-full ring-2 ring-white bg-teal-400 dark:ring-neutral-900"></span>
+			<div class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-lg shadow-sm dark:bg-neutral-700" role="tooltip">
+				{ peer.Alias } is online
 			</div>
-		</div>
-	</section>
-}
-
-templ Movie(m repo.Movie) {
-	<div class="flex-none w-[200px]">
-		<img src="/static/Black.Mirror.S01E01.720p.WEBRip.x264-GalaxyTV.mkv.thumb.jpg" height="300" width="200" alt="Movie 1" class="w-full h-[300px] object-cover rounded-md hover:scale-105 transition-transform duration-300"/>
+		</a>
 	</div>
 }
 
-templ Index(m repo.Movie) {
+templ Movie(m repo.Movie) {
+	<div class="flex flex-col w-1/5 bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70">
+		<img class="object-cover rounded-t-xl" src={ m.ThumbNailUrl } width="400" height="400" alt="Card Image"/>
+		<div class="p-4 md:p-5">
+			<h3 class="text-lg font-bold text-gray-800 dark:text-white">
+				{ m.Name }
+			</h3>
+			<p class="mt-1 text-gray-500 dark:text-neutral-400 text-ellipsis">
+				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+			</p>
+			<a class="mt-2 py-2 px-3 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" href="#">
+				Play
+			</a>
+		</div>
+	</div>
+}
+
+templ Aside(peers []peers.PeerInfo) {
+	<div class="w-1/6 border-r-2 p-8">
+		Online users
+		<div class="flex flex-col gap-2">
+			for _, peer := range peers {
+				@OnlineUser(peer)
+			}
+		</div>
+	</div>
+}
+
+templ Content(movies []repo.Movie) {
+	<div class="w-5/6 p-8">
+		Movies
+		<div class="flex flex-start flex-wrap gap-4">
+			for _, m := range movies {
+				@Movie(m)
+			}
+		</div>
+	</div>
+}
+
+templ Index(peers []peers.PeerInfo, movies []repo.Movie) {
 	@Layout() {
-		@Hero(m)
-		<section class="py-8">
-			<h2 class="text-2xl text-white font-semibold mb-4 px-8">Trending Now</h2>
-			<div class="relative">
-				<div class="flex space-x-4 overflow-x-auto scrollbar-hide p-8">
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-					@Movie(m)
-				</div>
-			</div>
-		</section>
+		<div class="w-full h-full flex overflow-auto">
+			@Aside(peers)
+			@Content(movies)
+		</div>
 	}
 }

@@ -1,11 +1,9 @@
 package putils
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 
-	"github.com/kahono0/netfl/pkg/msgs"
 	"github.com/kahono0/netfl/pkg/peers"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -22,39 +20,25 @@ func Connect(host host.Host, peer peer.AddrInfo) error {
 	return nil
 }
 
-func WriteMessage(rw *bufio.ReadWriter, msg *msgs.Message) error {
-	_, err := rw.Write(msg.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return rw.Flush()
-}
-
-func SendMessage(host host.Host, peer peer.AddrInfo, msg *msgs.Message, protocolID string) error {
+func CreateStrean(host host.Host, peer peer.AddrInfo, protocolID string) (*network.Stream, error) {
 	ctx := context.Background()
 	if err := Connect(host, peer); err != nil {
-		return err
+		return nil, err
 	}
 	s, err := host.NewStream(ctx, peer.ID, protocol.ID(protocolID))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
-	return WriteMessage(rw, msg)
+	return &s, nil
 }
 
-func SendToUnkown(host host.Host, peerID peer.ID, msg *msgs.Message, protocolID string) error {
-	peer := peers.GetPeerByID(peerID.String())
+func CreateStreamFromUnknow(host host.Host, peerID peer.ID, protocolID string) (*network.Stream, error) {
+	peer := peers.Store.GetPeerByID(peerID.String())
 	if peer == nil {
-		return fmt.Errorf("no peer found with ID %s", peerID)
+		return nil, fmt.Errorf("no peer found with ID %s", peerID)
 	}
 
-	return SendMessage(host, *peer, msg, protocolID)
-}
+	return CreateStrean(host, *peer, protocolID)
 
-func SendWithStream(msg *msgs.Message, stream network.Stream) error {
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	return WriteMessage(rw, msg)
 }

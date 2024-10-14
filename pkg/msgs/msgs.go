@@ -3,9 +3,14 @@ package msgs
 import (
 	"bufio"
 	"errors"
+
+	"github.com/kahono0/netfl/repo"
+	"github.com/libp2p/go-libp2p/core/network"
 )
 
 var ErrUnknownMessageType = errors.New("unknown message type")
+
+var EOFDelim = byte(0)
 
 type MessageTypeID uint
 
@@ -16,9 +21,15 @@ type MessageType struct {
 const (
 	Ping MessageTypeID = iota
 	Sample
-	RequestMovies
-	ResponseMovies
+	InitialRequest
+	InitialResponse
 )
+
+type InitialResponseData struct {
+	Alias  string
+	Avatar string
+	Movies []repo.Movie
+}
 
 // utility to chack if method type is valid
 func NewMessageType(t MessageTypeID) (*MessageType, error) {
@@ -49,7 +60,7 @@ func NewMessage(c MessageTypeID, data []byte) (*Message, error) {
 }
 
 func NewFromReader(r *bufio.Reader) (*Message, error) {
-	msg, err := r.ReadBytes('\n')
+	msg, err := r.ReadBytes(EOFDelim)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +68,27 @@ func NewFromReader(r *bufio.Reader) (*Message, error) {
 	return DecodeMessage(msg)
 }
 
-func (m *Message) Bytes() []byte {
+func (m *Message) bytes() []byte {
 	msg := append([]byte{byte(m.Type.Code)}, m.Data...)
-	return append(msg, '\n')
+	return append(msg, EOFDelim)
+}
+
+func (m *Message) Write(stream network.Stream) error {
+	defer stream.Close()
+
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+
+	_, err := rw.Write(m.bytes())
+	if err != nil {
+		return err
+	}
+
+	return rw.Flush()
 }
 
 func DecodeMessage(data []byte) (*Message, error) {
 	code := MessageTypeID(data[0])
+
 	msgType, err := NewMessageType(code)
 	if err != nil {
 		return nil, err

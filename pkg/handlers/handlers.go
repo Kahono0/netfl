@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 
 	"github.com/kahono0/netfl/pkg/msgs"
@@ -16,24 +18,28 @@ import (
 type Handler struct {
 	Host       host.Host
 	ProtocolID string
+	Alias      string
+	Avatar     string
 	Handlers   map[msgs.MessageTypeID]func(*msgs.Message, network.Stream) error
 }
 
 var MsgHandler *Handler
 
-func NewHandler(host host.Host, protocolID string) {
+func NewHandler(host host.Host, protocolID string, alias, avatar string) {
 	MsgHandler = &Handler{
 		Host:       host,
 		ProtocolID: protocolID,
+		Alias:      alias,
+		Avatar:     avatar,
 	}
 }
 
 func (h *Handler) RegisterHandlers() {
 	h.Handlers = map[msgs.MessageTypeID]func(*msgs.Message, network.Stream) error{
-		msgs.Ping:           h.HandlePing,
-		msgs.Sample:         h.HandleSample,
-		msgs.RequestMovies:  h.HandleRequestMovies,
-		msgs.ResponseMovies: h.HandleResponseMovies,
+		msgs.Ping:            h.HandlePing,
+		msgs.Sample:          h.HandleSample,
+		msgs.InitialRequest:  h.HandleInitialRequest,
+		msgs.InitialResponse: h.HandleInitialResponse,
 	}
 }
 
@@ -59,38 +65,66 @@ func (h *Handler) HandleSample(msg *msgs.Message, stream network.Stream) error {
 	return nil
 }
 
-func (h *Handler) RequestMovies(peer peer.AddrInfo) error {
-	msg, err := msgs.NewMessage(msgs.RequestMovies, []byte{})
+func (h *Handler) InitialRequest(peer peer.AddrInfo) error {
+	msg, err := msgs.NewMessage(msgs.InitialRequest, []byte{})
 	if err != nil {
 		return err
 	}
 
-	return putils.SendMessage(h.Host, peer, msg, h.ProtocolID)
+	s, err := putils.CreateStrean(h.Host, peer, h.ProtocolID)
+	if err != nil {
+		return err
+	}
+
+	return msg.Write(*s)
 }
 
-func (h *Handler) HandleRequestMovies(msg *msgs.Message, stream network.Stream) error {
-	fmt.Printf("\n\nReceived request for movies %s\n\n", string(msg.Data))
-	movies := repo.Repo.ToJSON()
+func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream) error {
+	fmt.Printf("\n\nReceived an initial request from%s\n\n", stream.Conn().RemotePeer())
 
-	newMsg, err := msgs.NewMessage(msgs.ResponseMovies, []byte(movies))
+	initialRequestData := &msgs.InitialResponseData{
+		Alias:  h.Alias,
+		Avatar: h.Avatar,
+		Movies: repo.Repo.GetMovies(),
+	}
+
+	data, err := json.Marshal(initialRequestData)
+	if err != nil {
+		return err
+	}
+
+	newMsg, err := msgs.NewMessage(msgs.InitialResponse, []byte(data))
 	if err != nil {
 		return err
 	}
 
 	peerID := stream.Conn().RemotePeer()
-	return putils.SendToUnkown(h.Host, peerID, newMsg, h.ProtocolID)
-}
-
-func (h *Handler) HandleResponseMovies(msg *msgs.Message, stream network.Stream) error {
-	movies := string(msg.Data)
-
-	err := repo.Repo.AddFromJSON(movies)
+	s, err := putils.CreateStreamFromUnknow(h.Host, peerID, h.ProtocolID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("\n\nReceived movies from peer %s\n\n", stream.Conn().RemotePeer())
+	return newMsg.Write(*s)
+}
+
+func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream) error {
+	fmt.Printf("\n\nReceived an initial response from %s\n\n", stream.Conn().RemotePeer())
+
+	var data msgs.InitialResponseData
+
+	err := json.Unmarshal(msg.Data, &data)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Received alias: %s, avatar: %s\n", data.Alias, data.Avatar)
+
+	_ = peers.Store.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
+
+	repo.Repo.AddMovies(data.Movies)
+
 	return nil
+
 }
 
 func HandleNewPeer(peer peer.AddrInfo, host host.Host, protocolID string) error {
@@ -99,7 +133,8 @@ func HandleNewPeer(peer peer.AddrInfo, host host.Host, protocolID string) error 
 		ProtocolID: protocolID,
 	}
 
-	return h.RequestMovies(peer)
+	return h.InitialRequest(peer)
+
 }
 
 func (h *Handler) Ping(peer peer.AddrInfo) error {
@@ -108,14 +143,40 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 		return err
 	}
 
-	return putils.SendMessage(h.Host, peer, msg, h.ProtocolID)
+	s, err := putils.CreateStrean(h.Host, peer, h.ProtocolID)
+	if err != nil {
+		return err
+	}
+
+	return msg.Write(*s)
 }
 
-func (h *Handler) PingPeers(ps []peer.AddrInfo) {
+func (h *Handler) PingPeers() {
+	ps := peers.Store.Peers
 	for _, peer := range ps {
-		err := h.Ping(peer)
+		err := h.Ping(peer.Peer)
 		if err != nil {
-			peers.RemovePeer(peer)
+			peers.Store.RemovePeer(peer.Peer)
 		}
 	}
+}
+
+func handleMsg(rw *bufio.ReadWriter, stream network.Stream) {
+	msg, err := msgs.NewFromReader(rw.Reader)
+	if err != nil {
+		fmt.Println("Error reading message")
+		return
+	}
+	err = MsgHandler.HandleMessage(msg, stream)
+	if err != nil {
+		fmt.Println("Error handling message")
+		return
+	}
+}
+
+func HandleStream(stream network.Stream) {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	defer stream.Close()
+
+	handleMsg(rw, stream)
 }
