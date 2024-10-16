@@ -7,6 +7,7 @@ toolchain go1.22.8
 require (
 	github.com/a-h/templ v0.2.778
 	github.com/gabriel-vasile/mimetype v1.4.5
+	github.com/gorilla/websocket v1.5.3
 	github.com/libp2p/go-libp2p v0.36.5
 	github.com/multiformats/go-multiaddr v0.13.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
@@ -31,7 +32,6 @@ require (
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/ipfs/go-cid v0.4.1 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect

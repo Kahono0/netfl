@@ -7,7 +7,7 @@ import (
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/p2p"
-	"github.com/kahono0/netfl/repo"
+	"github.com/kahono0/netfl/pkg/repo/movies"
 	"github.com/kahono0/netfl/utils"
 	"github.com/kahono0/netfl/views/pages"
 )
@@ -34,7 +34,7 @@ func index(app *app.App) http.HandlerFunc {
 	}
 }
 
-func getMovies(repo *repo.MovieRepo) http.HandlerFunc {
+func getMovies(repo *movies.MovieRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		movies := repo.ToJSON()
 		w.Header().Set("Content-Type", "application/json")

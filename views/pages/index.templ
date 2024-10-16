@@ -3,7 +3,7 @@ package pages
 import (
 	"fmt"
 	"github.com/kahono0/netfl/pkg/p2p"
-	"github.com/kahono0/netfl/repo"
+	"github.com/kahono0/netfl/pkg/repo/movies"
 )
 
 templ Layout() {
@@ -56,7 +56,7 @@ templ OnlineUser(peer p2p.PeerInfo) {
 	</div>
 }
 
-templ Movie(m repo.Movie) {
+templ Movie(m movies.Movie) {
 	<div id={ fmt.Sprintf("m-%d", m.ID) } class="w-[500px] h-[450px] border-2">
 		<div class="w-full h-80">
 			<img class="w-full h-full object-cover" src={ m.ThumbNailUrl } alt="Card Image"/>
@@ -93,7 +93,7 @@ templ Aside(peers []p2p.PeerInfo) {
 	</div>
 }
 
-templ Content(movies []repo.Movie) {
+templ Content(movies []movies.Movie) {
 	<div class="w-5/6">
 		<div id="movies" class="h-full flex flex-start flex-wrap gap-8 overflow-auto pb-12">
 			for _, m := range movies {
@@ -103,7 +103,7 @@ templ Content(movies []repo.Movie) {
 	</div>
 }
 
-templ Index(peers []p2p.PeerInfo, movies []repo.Movie) {
+templ Index(peers []p2p.PeerInfo, movies []movies.Movie) {
 	@Layout() {
 		<div class="w-full h-screen flex overflow-hidden">
 			@Aside(peers)

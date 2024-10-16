@@ -1,4 +1,4 @@
-package repo
+package movies
 
 import (
 	"fmt"
@@ -98,7 +98,7 @@ type MovieRepo struct {
 	NextID   int
 }
 
-func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
+func New(dir, hostAddr string, log bool) *MovieRepo {
 	repo := &MovieRepo{
 		Dir:      dir,
 		HostAddr: hostAddr,

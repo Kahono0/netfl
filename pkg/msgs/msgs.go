@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kahono0/netfl/repo"
+	"github.com/kahono0/netfl/pkg/repo/movies"
 	"github.com/libp2p/go-libp2p/core/network"
 )
 
@@ -29,7 +29,7 @@ const (
 type InitialResponseData struct {
 	Alias  string
 	Avatar string
-	Movies []repo.Movie
+	Movies []movies.Movie
 }
 
 // utility to chack if method type is valid
