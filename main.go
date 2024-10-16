@@ -56,6 +56,8 @@ func main() {
 
 	handlers.Setup(app)
 
+	go handlers.MsgHandler.PingPeers()
+
 	router.SetUpRoutes(app)
 
 	fmt.Printf("Listening on http://localhost:%d\n", port)

@@ -18,13 +18,13 @@ func SetUpRoutes(app *app.App) {
 	http.HandleFunc("/movies", getMovies(app.GetMovieRepo()))
 	http.HandleFunc("/peers", getPeers(app.GetPeerStore()))
 	http.HandleFunc("/thumb/", serveThumbs(app.Config.Path))
+	http.HandleFunc("/movies/", serveMovies(app.Config.Path))
 
 }
 
 func index(app *app.App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		peers := app.GetPeerStore().Peers
-		fmt.Println(utils.AsPrettyJson(peers))
 		movies := app.GetMovieRepo().Movies
 
 		c := pages.Index(peers, movies)
@@ -57,5 +57,12 @@ func serveThumbs(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Request URL: %s\n", path+r.URL.Path[6:])
 		http.ServeFile(w, r, path+r.URL.Path[6:])
+	}
+}
+
+func serveMovies(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Request URL: %s\n", path+r.URL.Path[7:])
+		http.ServeFile(w, r, path+r.URL.Path[7:])
 	}
 }

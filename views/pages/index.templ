@@ -47,7 +47,7 @@ body {
 templ OnlineUser(peer p2p.PeerInfo) {
 	<div class="hs-tooltip inline-block">
 		<a class="hs-tooltip-toggle relative inline-block" href="#">
-			<img class="inline-block size-[46px] rounded-full" src={ peer.Avatar } alt="Avatar"/>
+			<img class="inline-block size-[30px] rounded-full" src={ peer.Avatar } alt="Avatar"/>
 			<span class="absolute bottom-0 end-0 block size-3 rounded-full ring-2 ring-white bg-teal-400 dark:ring-neutral-900"></span>
 			<div class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-lg shadow-sm dark:bg-neutral-700" role="tooltip">
 				{ peer.Alias } is online
@@ -57,18 +57,25 @@ templ OnlineUser(peer p2p.PeerInfo) {
 }
 
 templ Movie(m repo.Movie) {
-	<div class="flex flex-col w-1/5 bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70">
-		<img class="object-cover rounded-t-xl" src={ m.ThumbNailUrl } width="400" height="400" alt="Card Image" loading="lazy"/>
-		<div class="p-4 md:p-5">
-			<h3 class="text-lg font-bold text-gray-800 dark:text-white">
+	<div class="w-[500px] h-[450px] border-2">
+		<div class="w-full h-80">
+			<img class="w-full h-full object-cover" src={ m.ThumbNailUrl } alt="Card Image"/>
+		</div>
+		<div class="w-full p-4">
+			<p class="break-words overflow-hidden text-ellipsis text-xl font-bold">
 				{ m.Name }
-			</h3>
-			<p class="mt-1 text-gray-500 dark:text-neutral-400 text-ellipsis">
-				"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
 			</p>
-			<a class="mt-2 py-2 px-3 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" href="#">
-				Play
-			</a>
+			<div class="mt-2">
+				if m.IsPlayableByWebBrowser {
+					<a class="font-semibold text-white py-2 px-4 bg-blue-700 rounded-md" href={ templ.SafeURL(m.MovieUrl) } target="_blank">
+						Play
+					</a>
+				} else {
+					<a class="font-semibold text-white py-2 px-4 bg-blue-700 rounded-md" href={ templ.SafeURL(m.MovieUrl) } download>
+						Download
+					</a>
+				}
+			</div>
 		</div>
 	</div>
 }
@@ -78,16 +85,18 @@ templ Aside(peers []p2p.PeerInfo) {
 		Online users
 		<div class="flex flex-col gap-2">
 			for _, peer := range peers {
-				@OnlineUser(peer)
+				if peer.Alias != "" {
+					@OnlineUser(peer)
+				}
 			}
 		</div>
 	</div>
 }
 
 templ Content(movies []repo.Movie) {
-	<div class="w-5/6 p-8">
+	<div class="w-5/6">
 		Movies
-		<div class="flex flex-start flex-wrap gap-4">
+		<div class="h-full flex flex-start flex-wrap gap-8 overflow-auto pb-12">
 			for _, m := range movies {
 				@Movie(m)
 			}
@@ -97,7 +106,7 @@ templ Content(movies []repo.Movie) {
 
 templ Index(peers []p2p.PeerInfo, movies []repo.Movie) {
 	@Layout() {
-		<div class="w-full h-full flex overflow-auto">
+		<div class="w-full h-screen flex overflow-hidden">
 			@Aside(peers)
 			@Content(movies)
 		</div>

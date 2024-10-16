@@ -43,7 +43,7 @@ func New(cfg Config, avatar, alias string, port int, newStreamHandler func(strea
 	cfg.HostAddr = hostAddr
 
 	cfg.Avatar = hostAddr + "/" + avatar
-	// cfg.StreamHandler = newStreamHandler
+	cfg.StreamHandler = newStreamHandler
 
 	return NewApp(cfg)
 }

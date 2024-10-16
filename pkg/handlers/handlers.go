@@ -136,15 +136,7 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 }
 
 func (h *Handler) HandleNewPeer(peer peer.AddrInfo) error {
-	peerStore := h.GetPeerStore()
-	peerStore.AddPeer(peer, "", "")
-
-	err := h.InitialRequest(peer)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return h.InitialRequest(peer)
 }
 
 func (h *Handler) Ping(peer peer.AddrInfo) error {
