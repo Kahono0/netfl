@@ -55,12 +55,14 @@ func getPeers(peerStore *p2p.PeerStore) http.HandlerFunc {
 
 func serveThumbs(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
 		http.ServeFile(w, r, path+r.URL.Path[6:])
 	}
 }
 
 func serveMovies(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "video/mp4")
 		http.ServeFile(w, r, path+r.URL.Path[7:])
 	}
 }
