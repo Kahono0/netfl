@@ -6,7 +6,6 @@ import (
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/msgs"
-	"github.com/kahono0/netfl/utils"
 
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -52,9 +51,9 @@ func (h *Handler) HandleMessage(msg *msgs.Message, stream network.Stream) error 
 }
 
 func (h *Handler) HandlePing(msg *msgs.Message, stream network.Stream) error {
-	if string(msg.Data) != "\n" {
-		fmt.Print("-")
-	}
+	// if string(msg.Data) != "\n" {
+	// 	fmt.Print("-")
+	// }
 
 	return nil
 }
@@ -91,7 +90,6 @@ func HandleStream(stream network.Stream) {
 func (h *Handler) ListenForPeers() {
 	for {
 		peer := <-h.PeerChan
-		fmt.Printf("Found peer: %s\n", utils.AsPrettyJson(peer))
 		ps := h.GetPeerStore()
 		ps.AddPeer(peer, "", "")
 

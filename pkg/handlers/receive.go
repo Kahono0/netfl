@@ -11,11 +11,9 @@ import (
 )
 
 func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream) error {
-	fmt.Printf("\n\nReceived an initial request from%s\n\n", stream.Conn().RemotePeer())
-
 	initialRequestData := &msgs.InitialResponseData{
 		Alias:  h.Config.Alias,
-		Avatar: h.Config.Avatar,
+		Avatar: h.Config.HostAddr + "/avi",
 		Movies: h.GetMovieRepo().Movies,
 	}
 
@@ -45,16 +43,12 @@ func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream)
 }
 
 func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream) error {
-	fmt.Printf("\n\nReceived an initial response from %s\n\n", stream.Conn().RemotePeer())
-
 	var data msgs.InitialResponseData
 
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("Received alias: %s, avatar: %s\n", data.Alias, data.Avatar)
 
 	peerStore := h.GetPeerStore()
 	peer := peerStore.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)

@@ -35,7 +35,7 @@ func Layout() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><link rel=\"stylesheet\" href=\"/static/output.css\"><style>\n               :root {\n\t\t\t--foreground-rgb: 0, 0, 0;\n\t\t\t--background-start-rgb: 255, 255, 255;\n\t\t\t--background-end-rgb:214, 219, 220 ;\n\t\t\t}\n\n\t\t\t@media (prefers-color-scheme: dark) {\n\t\t\t:root {\n\t\t\t\t--foreground-rgb: 255, 255, 255;\n\t\t\t\t--background-start-rgb: 0, 0, 0;\n\t\t\t\t--background-end-rgb: 0, 0, 0;\n\t\t\t}\n\t\t\t}\n\n\t\t\tbody {\n\t\t\tcolor: rgb(var(--foreground-rgb));\n\t\t\tbackground: linear-gradient(\n\t\t\t\tto bottom,\n\t\t\t\ttransparent,\n\t\t\t\trgb(var(--background-end-rgb))\n\t\t\t\t)\n\t\t\t\trgb(var(--background-start-rgb));\n\t\t\t}\n    </style></head><body class=\"h-screen w-screen\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><link rel=\"stylesheet\" href=\"https://kahono0.github.io/netfl/static/output.css\"><style>\n               :root {\n\t\t\t--foreground-rgb: 0, 0, 0;\n\t\t\t--background-start-rgb: 255, 255, 255;\n\t\t\t--background-end-rgb:214, 219, 220 ;\n\t\t\t}\n\n\t\t\t@media (prefers-color-scheme: dark) {\n\t\t\t:root {\n\t\t\t\t--foreground-rgb: 255, 255, 255;\n\t\t\t\t--background-start-rgb: 0, 0, 0;\n\t\t\t\t--background-end-rgb: 0, 0, 0;\n\t\t\t}\n\t\t\t}\n\n\t\t\tbody {\n\t\t\tcolor: rgb(var(--foreground-rgb));\n\t\t\tbackground: linear-gradient(\n\t\t\t\tto bottom,\n\t\t\t\ttransparent,\n\t\t\t\trgb(var(--background-end-rgb))\n\t\t\t\t)\n\t\t\t\trgb(var(--background-start-rgb));\n\t\t\t}\n    </style></head><body class=\"h-screen w-screen\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func Layout() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body><script src=\"/static/app.js\"></script></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body><script src=\"https://kahono0.github.io/netfl/static/app.js\"></script></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

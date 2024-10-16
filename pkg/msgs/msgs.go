@@ -3,7 +3,6 @@ package msgs
 import (
 	"bufio"
 	"errors"
-	"fmt"
 
 	"github.com/kahono0/netfl/pkg/repo/movies"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -94,8 +93,6 @@ func DecodeMessage(data []byte) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(data)
 
 	return &Message{
 		Type: *msgType,

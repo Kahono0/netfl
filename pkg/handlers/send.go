@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kahono0/netfl/pkg/msgs"
@@ -25,7 +24,6 @@ func (h *Handler) InitialRequest(peer peer.AddrInfo) error {
 }
 
 func (h *Handler) Ping(peer peer.AddrInfo) error {
-	fmt.Println("...")
 	msg, err := msgs.NewMessage(msgs.Ping, []byte("\n"))
 	if err != nil {
 		return err
@@ -33,7 +31,6 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 
 	s, err := p2p.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
-		fmt.Println("!!!")
 		return err
 	}
 
@@ -43,7 +40,6 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 func (h *Handler) PingPeers() {
 	for {
 		peerStore := h.GetPeerStore()
-		fmt.Printf("Pinging %d peers\n", len(peerStore.Peers))
 		ps := peerStore.Peers
 		for _, peer := range ps {
 			err := h.Ping(peer.Peer)

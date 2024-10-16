@@ -1,7 +1,6 @@
 package movies
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -44,10 +43,8 @@ func (t *ThumbNailGenWorker) Start() {
 					t.done <- true
 					return
 				}
-				fmt.Printf("Creating thumbnail for %s\n", job.Path)
 				job.Movie.CreateThumbnail(t.repo.HostAddr, job.Path, t.repo.Dir)
 				t.repo.UpdateMovie(job.Movie)
-				fmt.Printf("Thumbnail created for %s\n", job.Path)
 			case <-t.done:
 				return
 			}

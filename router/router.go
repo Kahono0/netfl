@@ -2,20 +2,18 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/pkg/repo/movies"
 	"github.com/kahono0/netfl/pkg/ws"
-	"github.com/kahono0/netfl/utils"
 	"github.com/kahono0/netfl/views/pages"
 )
 
 func SetUpRoutes(app *app.App) {
 	http.HandleFunc("/ws", ws.Handle)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("~/.netfl/static"))))
+	http.HandleFunc("/avi", serveAvi(app.Config.Alias))
 	http.HandleFunc("/", index(app))
 	http.HandleFunc("/movies", getMovies(app.GetMovieRepo()))
 	http.HandleFunc("/peers", getPeers(app.GetPeerStore()))
@@ -46,7 +44,6 @@ func getMovies(repo *movies.MovieRepo) http.HandlerFunc {
 func getPeers(peerStore *p2p.PeerStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		peers := peerStore.Peers
-		fmt.Printf("Peers %s\n", utils.AsPrettyJson(peers))
 
 		data, _ := json.Marshal(peers)
 
@@ -57,14 +54,19 @@ func getPeers(peerStore *p2p.PeerStore) http.HandlerFunc {
 
 func serveThumbs(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Request URL: %s\n", path+r.URL.Path[6:])
 		http.ServeFile(w, r, path+r.URL.Path[6:])
 	}
 }
 
 func serveMovies(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Request URL: %s\n", path+r.URL.Path[7:])
 		http.ServeFile(w, r, path+r.URL.Path[7:])
+	}
+}
+
+func serveAvi(alias string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		file := "~/.netfl/assets/" + alias + ".png"
+		http.ServeFile(w, r, file)
 	}
 }
