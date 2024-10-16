@@ -40,7 +40,7 @@ function addElement(text) {
 
 let ws;
 function connectWebSocket() {
-  ws = new WebSocket("ws://localhost:8080/ws");
+  ws = new WebSocket(window.location.href.replace("http", "ws") + "ws");
 
   ws.onopen = function () {
     console.log("Connected");
