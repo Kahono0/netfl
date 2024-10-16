@@ -7,7 +7,7 @@ import (
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/msgs"
-	"github.com/kahono0/netfl/pkg/putils"
+	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/utils"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -72,7 +72,7 @@ func (h *Handler) InitialRequest(peer peer.AddrInfo) error {
 		return err
 	}
 
-	s, err := putils.CreateStream(h.Host, peer, h.Config.ProtocolID)
+	s, err := p2p.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream)
 		return fmt.Errorf("peer not found")
 	}
 
-	s, err := putils.CreateStream(h.Host, *peer, h.Config.ProtocolID)
+	s, err := p2p.CreateStream(h.Host, *peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 		return err
 	}
 
-	s, err := putils.CreateStream(h.Host, peer, h.Config.ProtocolID)
+	s, err := p2p.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}

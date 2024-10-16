@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kahono0/netfl/pkg/p2p"
-	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/kahono0/netfl/repo"
 	"github.com/kahono0/netfl/utils"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -33,7 +32,7 @@ type Config struct {
 type App struct {
 	Config    Config
 	movieRepo *repo.MovieRepo
-	peerStore *peers.PeerStore
+	peerStore *p2p.PeerStore
 	Host      host.Host
 	PeerChan  chan peer.AddrInfo
 }
@@ -44,13 +43,13 @@ func New(cfg Config, avatar, alias string, port int, newStreamHandler func(strea
 	cfg.HostAddr = hostAddr
 
 	cfg.Avatar = hostAddr + "/" + avatar
-	cfg.StreamHandler = newStreamHandler
+	// cfg.StreamHandler = newStreamHandler
 
 	return NewApp(cfg)
 }
 
 func NewApp(config Config) (*App, error) {
-	peers := peers.NewStore()
+	peers := p2p.NewStore()
 
 	host, peerChan := p2p.Init(config.P2PConfig, peers)
 	movies := repo.NewMovieRepo(config.Path, config.HostAddr, false)
@@ -68,6 +67,6 @@ func (a *App) GetMovieRepo() *repo.MovieRepo {
 	return a.movieRepo
 }
 
-func (a *App) GetPeerStore() *peers.PeerStore {
+func (a *App) GetPeerStore() *p2p.PeerStore {
 	return a.peerStore
 }

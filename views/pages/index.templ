@@ -1,7 +1,7 @@
 package pages
 
 import (
-	"github.com/kahono0/netfl/pkg/peers"
+	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/repo"
 )
 
@@ -44,7 +44,7 @@ body {
 	</html>
 }
 
-templ OnlineUser(peer peers.PeerInfo) {
+templ OnlineUser(peer p2p.PeerInfo) {
 	<div class="hs-tooltip inline-block">
 		<a class="hs-tooltip-toggle relative inline-block" href="#">
 			<img class="inline-block size-[46px] rounded-full" src={ peer.Avatar } alt="Avatar"/>
@@ -73,7 +73,7 @@ templ Movie(m repo.Movie) {
 	</div>
 }
 
-templ Aside(peers []peers.PeerInfo) {
+templ Aside(peers []p2p.PeerInfo) {
 	<div class="w-1/6 border-r-2 p-8">
 		Online users
 		<div class="flex flex-col gap-2">
@@ -95,7 +95,7 @@ templ Content(movies []repo.Movie) {
 	</div>
 }
 
-templ Index(peers []peers.PeerInfo, movies []repo.Movie) {
+templ Index(peers []p2p.PeerInfo, movies []repo.Movie) {
 	@Layout() {
 		<div class="w-full h-full flex overflow-auto">
 			@Aside(peers)

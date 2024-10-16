@@ -1,4 +1,4 @@
-package peers
+package p2p
 
 import (
 	"sync"

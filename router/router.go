@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kahono0/netfl/pkg/app"
-	"github.com/kahono0/netfl/pkg/peers"
+	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/repo"
 	"github.com/kahono0/netfl/utils"
 	"github.com/kahono0/netfl/views/pages"
@@ -41,7 +41,7 @@ func getMovies(repo *repo.MovieRepo) http.HandlerFunc {
 	}
 }
 
-func getPeers(peerStore *peers.PeerStore) http.HandlerFunc {
+func getPeers(peerStore *p2p.PeerStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		peers := peerStore.Peers
 		fmt.Printf("Peers %s\n", utils.AsPrettyJson(peers))

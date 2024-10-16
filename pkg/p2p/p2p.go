@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -23,7 +22,7 @@ type P2PConfig struct {
 	StreamHandler    func(network.Stream)
 }
 
-func Init(cfg P2PConfig, ps *peers.PeerStore) (host.Host, chan peer.AddrInfo) {
+func Init(cfg P2PConfig, ps *PeerStore) (host.Host, chan peer.AddrInfo) {
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
 	r := rand.Reader

@@ -29,6 +29,7 @@ func (t *ThumbNailGenWorker) Start() {
 			select {
 			case job, ok := <-t.jobQueue:
 				if !ok {
+					t.done <- true
 					return
 				}
 				fmt.Printf("Creating thumbnail for %s\n", job.Path)
