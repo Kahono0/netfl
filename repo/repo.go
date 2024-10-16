@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"encoding/json"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kahono0/netfl/utils"
 )
-
-var Repo *MovieRepo
 
 var acceptedMimeTypes = []string{
 	"video/mp4",           // MP4
@@ -80,14 +77,14 @@ type Movie struct {
 	Hash                   string
 }
 
-func (m *Movie) CreateThumbnail(hostAdrr string, path string) error {
+func (m *Movie) CreateThumbnail(hostAdrr string, path string, dir string) error {
 	outputFile := fmt.Sprintf("%s.thumb.jpg", path)
 	err := utils.ExtractThumbnail(path, outputFile, thumbNailTime)
 	if err != nil {
 		return err
 	}
 
-	m.ThumbNailUrl = fmt.Sprintf("%s/thumb%s", hostAdrr, outputFile[len(Repo.Dir):])
+	m.ThumbNailUrl = fmt.Sprintf("%s/thumb%s", hostAdrr, outputFile[len(dir):])
 	return nil
 }
 
@@ -99,27 +96,28 @@ type MovieRepo struct {
 	Loaded   bool
 }
 
-func Init(port int, dir string, log bool) {
-	movieRepoUrl := fmt.Sprintf("http://%s:%d/movies", utils.GetPrivateIP(), port)
-
-	Repo = NewMovieRepo(dir, movieRepoUrl, log)
-
-	go Repo.Load()
-}
-
 func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
-	return &MovieRepo{
+	repo := &MovieRepo{
 		Dir:      dir,
 		HostAddr: hostAddr,
 		Log:      log,
 		Loaded:   false,
 	}
+
+	go repo.Load()
+
+	return repo
 }
 
 func (r *MovieRepo) Load() error {
 	if r.Dir == "" {
 		return nil
 	}
+
+	worker := NewThumbNailGenWorker(r)
+	worker.Start()
+
+	defer worker.Close()
 
 	err := filepath.Walk(r.Dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -130,7 +128,6 @@ func (r *MovieRepo) Load() error {
 			return nil
 		}
 
-		timeToCreate := time.Now()
 		mime, err := mimetype.DetectFile(path)
 		if err != nil {
 			return err
@@ -146,7 +143,7 @@ func (r *MovieRepo) Load() error {
 
 		movie := Movie{
 			Name:                   filepath.Base(path),
-			MovieUrl:               fmt.Sprintf("%s%s", r.HostAddr, path[len(r.Dir):]),
+			MovieUrl:               fmt.Sprintf("%s/movies%s", r.HostAddr, path[len(r.Dir):]),
 			MimeType:               mimeTypeStr,
 			IsAcceptedMimeType:     true,
 			IsPlayableByWebBrowser: isPlayableByWebBrowser(mime),
@@ -155,15 +152,12 @@ func (r *MovieRepo) Load() error {
 		hash := utils.GetFileHash(path)
 		movie.Hash = hash
 
-		ThumbNailGenWorkerInstance.AddJob(Job{
-			Movie:    movie,
-			HostAddr: r.HostAddr[:len(r.HostAddr)-7],
-			Path:     path,
+		worker.AddJob(Job{
+			Movie: movie,
+			Path:  path,
 		})
 
 		r.Movies = append(r.Movies, movie)
-
-		fmt.Println("Time to create:", time.Since(timeToCreate))
 
 		return nil
 	})

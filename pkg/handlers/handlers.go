@@ -10,7 +10,6 @@ import (
 	"github.com/kahono0/netfl/pkg/putils"
 	"github.com/kahono0/netfl/utils"
 
-	"github.com/kahono0/netfl/repo"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
@@ -87,7 +86,7 @@ func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream)
 	initialRequestData := &msgs.InitialResponseData{
 		Alias:  h.Config.Alias,
 		Avatar: h.Config.Avatar,
-		Movies: repo.Repo.Movies,
+		Movies: h.GetMovieRepo().Movies,
 	}
 
 	data, err := json.Marshal(initialRequestData)
@@ -130,7 +129,7 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 	peerStore := h.GetPeerStore()
 	_ = peerStore.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
 
-	repo.Repo.AddMovies(data.Movies)
+	h.GetMovieRepo().AddMovies(data.Movies)
 
 	return nil
 
@@ -139,6 +138,11 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 func (h *Handler) HandleNewPeer(peer peer.AddrInfo) error {
 	peerStore := h.GetPeerStore()
 	peerStore.AddPeer(peer, "", "")
+
+	err := h.InitialRequest(peer)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

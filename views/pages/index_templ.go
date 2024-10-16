@@ -139,7 +139,7 @@ func Movie(m repo.Movie) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" width=\"400\" height=\"400\" alt=\"Card Image\"><div class=\"p-4 md:p-5\"><h3 class=\"text-lg font-bold text-gray-800 dark:text-white\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" width=\"400\" height=\"400\" alt=\"Card Image\" loading=\"lazy\"><div class=\"p-4 md:p-5\"><h3 class=\"text-lg font-bold text-gray-800 dark:text-white\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

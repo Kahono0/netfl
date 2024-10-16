@@ -9,29 +9,29 @@ import (
 	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/kahono0/netfl/repo"
 	"github.com/kahono0/netfl/utils"
+	"github.com/kahono0/netfl/views/pages"
 )
 
 func SetUpRoutes(app *app.App) {
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.HandleFunc("/", index(app))
 	http.HandleFunc("/movies", getMovies(app.GetMovieRepo()))
 	http.HandleFunc("/peers", getPeers(app.GetPeerStore()))
+	http.HandleFunc("/thumb/", serveThumbs(app.Config.Path))
+
 }
 
-// func SetUpRoutes(movieDir string) {
-// 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-// 	fmt.Println("Movie Dir: ", movieDir)
+func index(app *app.App) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		peers := app.GetPeerStore().Peers
+		fmt.Println(utils.AsPrettyJson(peers))
+		movies := app.GetMovieRepo().Movies
 
-// 	// serve movieDir as static files
-// 	http.HandleFunc("/thumb/", func(w http.ResponseWriter, r *http.Request) {
-// 		// strip the /movies/ prefix
-// 		fmt.Println("Request URL: ", movieDir+r.URL.Path[6:])
-// 		http.ServeFile(w, r, movieDir+r.URL.Path[6:])
-// 	})
-
-// 	http.HandleFunc("/", index)
-// 	http.HandleFunc("/movies", getMovies)
-// 	http.HandleFunc("/peers", getPeers)
-
-// }
+		c := pages.Index(peers, movies)
+		w.Header().Set("Content-Type", "text/html")
+		Render(r.Context(), c, w)
+	}
+}
 
 func getMovies(repo *repo.MovieRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -50,5 +50,12 @@ func getPeers(peerStore *peers.PeerStore) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
+	}
+}
+
+func serveThumbs(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Request URL: %s\n", path+r.URL.Path[6:])
+		http.ServeFile(w, r, path+r.URL.Path[6:])
 	}
 }

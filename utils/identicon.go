@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -12,8 +11,6 @@ import (
 
 func createIdenticon(data string, size int) image.Image {
 	hash := sha256.Sum256([]byte(data))
-	fmt.Println(hash)
-	fmt.Println(len(hash))
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 
 	// Background color
