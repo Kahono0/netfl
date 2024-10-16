@@ -5,32 +5,34 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/msgs"
-	"github.com/kahono0/netfl/pkg/peers"
 	"github.com/kahono0/netfl/pkg/putils"
+	"github.com/kahono0/netfl/utils"
 
 	"github.com/kahono0/netfl/repo"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 type Handler struct {
-	Host       host.Host
-	ProtocolID string
-	Alias      string
-	Avatar     string
-	Handlers   map[msgs.MessageTypeID]func(*msgs.Message, network.Stream) error
+	*app.App
+	Handlers map[msgs.MessageTypeID]func(*msgs.Message, network.Stream) error
 }
 
 var MsgHandler *Handler
 
-func NewHandler(host host.Host, protocolID string, alias, avatar string) {
+func Setup(app *app.App) {
+	NewHandler(app)
+
+	MsgHandler.RegisterHandlers()
+
+	go MsgHandler.ListenForPeers()
+}
+
+func NewHandler(app *app.App) {
 	MsgHandler = &Handler{
-		Host:       host,
-		ProtocolID: protocolID,
-		Alias:      alias,
-		Avatar:     avatar,
+		App: app,
 	}
 }
 
@@ -71,7 +73,7 @@ func (h *Handler) InitialRequest(peer peer.AddrInfo) error {
 		return err
 	}
 
-	s, err := putils.CreateStrean(h.Host, peer, h.ProtocolID)
+	s, err := putils.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}
@@ -83,9 +85,9 @@ func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream)
 	fmt.Printf("\n\nReceived an initial request from%s\n\n", stream.Conn().RemotePeer())
 
 	initialRequestData := &msgs.InitialResponseData{
-		Alias:  h.Alias,
-		Avatar: h.Avatar,
-		Movies: repo.Repo.GetMovies(),
+		Alias:  h.Config.Alias,
+		Avatar: h.Config.Avatar,
+		Movies: repo.Repo.Movies,
 	}
 
 	data, err := json.Marshal(initialRequestData)
@@ -99,7 +101,13 @@ func (h *Handler) HandleInitialRequest(msg *msgs.Message, stream network.Stream)
 	}
 
 	peerID := stream.Conn().RemotePeer()
-	s, err := putils.CreateStreamFromUnknow(h.Host, peerID, h.ProtocolID)
+	peerStore := h.GetPeerStore()
+	peer := peerStore.GetPeerByID(peerID.String())
+	if peer == nil {
+		return fmt.Errorf("peer not found")
+	}
+
+	s, err := putils.CreateStream(h.Host, *peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}
@@ -119,7 +127,8 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 
 	fmt.Printf("Received alias: %s, avatar: %s\n", data.Alias, data.Avatar)
 
-	_ = peers.Store.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
+	peerStore := h.GetPeerStore()
+	_ = peerStore.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
 
 	repo.Repo.AddMovies(data.Movies)
 
@@ -127,14 +136,11 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 
 }
 
-func HandleNewPeer(peer peer.AddrInfo, host host.Host, protocolID string) error {
-	h := &Handler{
-		Host:       host,
-		ProtocolID: protocolID,
-	}
+func (h *Handler) HandleNewPeer(peer peer.AddrInfo) error {
+	peerStore := h.GetPeerStore()
+	peerStore.AddPeer(peer, "", "")
 
-	return h.InitialRequest(peer)
-
+	return nil
 }
 
 func (h *Handler) Ping(peer peer.AddrInfo) error {
@@ -143,7 +149,7 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 		return err
 	}
 
-	s, err := putils.CreateStrean(h.Host, peer, h.ProtocolID)
+	s, err := putils.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
 		return err
 	}
@@ -152,11 +158,12 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 }
 
 func (h *Handler) PingPeers() {
-	ps := peers.Store.Peers
+	peerStore := h.GetPeerStore()
+	ps := peerStore.Peers
 	for _, peer := range ps {
 		err := h.Ping(peer.Peer)
 		if err != nil {
-			peers.Store.RemovePeer(peer.Peer)
+			peerStore.RemovePeer(peer.Peer)
 		}
 	}
 }
@@ -179,4 +186,15 @@ func HandleStream(stream network.Stream) {
 	defer stream.Close()
 
 	handleMsg(rw, stream)
+}
+
+func (h *Handler) ListenForPeers() {
+	for {
+		peer := <-h.PeerChan
+		fmt.Printf("Found peer: %s\n", utils.AsPrettyJson(peer))
+		ps := h.GetPeerStore()
+		ps.AddPeer(peer, "", "")
+
+		go h.HandleNewPeer(peer)
+	}
 }

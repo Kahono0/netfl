@@ -9,6 +9,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.5
 	github.com/libp2p/go-libp2p v0.36.5
 	github.com/multiformats/go-multiaddr v0.13.0
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 )
 
 require (
@@ -103,7 +104,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect

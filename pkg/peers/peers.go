@@ -1,11 +1,8 @@
 package peers
 
 import (
-	"fmt"
 	"sync"
 
-	"github.com/kahono0/netfl/utils"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
@@ -20,10 +17,8 @@ type PeerStore struct {
 	PeersMutex sync.Mutex
 }
 
-var Store *PeerStore
-
-func NewPeerStore() {
-	Store = &PeerStore{}
+func NewStore() *PeerStore {
+	return &PeerStore{}
 }
 
 func (ps *PeerStore) AddPeer(peer peer.AddrInfo, alias, avatar string) {
@@ -68,18 +63,4 @@ func (ps *PeerStore) UpdatePeer(peerID peer.ID, alias string, avatar string) *Pe
 	}
 
 	return nil
-}
-
-func ListenForPeers(peerChan chan peer.AddrInfo, host host.Host, protocalID string, handleNewPeer func(peer.AddrInfo, host.Host, string) error) {
-	for {
-		peer := <-peerChan
-		fmt.Printf("Found peer: %s\n", utils.AsPrettyJson(peer))
-		if Store == nil {
-			panic("Peer store not initialized")
-		}
-
-		Store.AddPeer(peer, "", "")
-
-		go handleNewPeer(peer, host, protocalID)
-	}
 }

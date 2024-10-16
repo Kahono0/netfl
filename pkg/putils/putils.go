@@ -2,9 +2,6 @@ package putils
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/kahono0/netfl/pkg/peers"
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -20,7 +17,7 @@ func Connect(host host.Host, peer peer.AddrInfo) error {
 	return nil
 }
 
-func CreateStrean(host host.Host, peer peer.AddrInfo, protocolID string) (*network.Stream, error) {
+func CreateStream(host host.Host, peer peer.AddrInfo, protocolID string) (*network.Stream, error) {
 	ctx := context.Background()
 	if err := Connect(host, peer); err != nil {
 		return nil, err
@@ -31,14 +28,4 @@ func CreateStrean(host host.Host, peer peer.AddrInfo, protocolID string) (*netwo
 	}
 
 	return &s, nil
-}
-
-func CreateStreamFromUnknow(host host.Host, peerID peer.ID, protocolID string) (*network.Stream, error) {
-	peer := peers.Store.GetPeerByID(peerID.String())
-	if peer == nil {
-		return nil, fmt.Errorf("no peer found with ID %s", peerID)
-	}
-
-	return CreateStrean(host, *peer, protocolID)
-
 }

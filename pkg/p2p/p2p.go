@@ -21,10 +21,9 @@ type P2PConfig struct {
 	ListenHost       string
 	ListenPort       int
 	StreamHandler    func(network.Stream)
-	NewPeerHandler   func(peer.AddrInfo, host.Host, string) error
 }
 
-func Init(cfg P2PConfig) host.Host {
+func Init(cfg P2PConfig, ps *peers.PeerStore) (host.Host, chan peer.AddrInfo) {
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
 	r := rand.Reader
@@ -50,7 +49,5 @@ func Init(cfg P2PConfig) host.Host {
 
 	peerChan := initMDNS(host, cfg.RendezvousString)
 
-	go peers.ListenForPeers(peerChan, host, cfg.ProtocolID, cfg.NewPeerHandler)
-
-	return host
+	return host, peerChan
 }
