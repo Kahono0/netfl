@@ -3,6 +3,7 @@ package router
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/p2p"
@@ -66,7 +67,8 @@ func serveMovies(path string) http.HandlerFunc {
 
 func serveAvi(alias string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		file := "~/.netfl/assets/" + alias + ".png"
+		homeDir, _ := os.UserHomeDir()
+		file := homeDir + "/.netfl/assets/" + alias + ".png"
 		http.ServeFile(w, r, file)
 	}
 }

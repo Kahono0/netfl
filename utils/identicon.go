@@ -58,7 +58,8 @@ func saveIdenticon(img image.Image, path string) error {
 }
 
 func generatePath(alias string) string {
-	dir := "~/.netfl/assets"
+	homeDir, _ := os.UserHomeDir()
+	dir := homeDir + "/.netfl/assets"
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
