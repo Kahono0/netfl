@@ -13,6 +13,7 @@ import (
 )
 
 func SetUpRoutes(app *app.App) {
+	http.HandleFunc("/ws", handleWebSocket)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", index(app))
 	http.HandleFunc("/movies", getMovies(app.GetMovieRepo()))

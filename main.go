@@ -60,6 +60,8 @@ func main() {
 
 	router.SetUpRoutes(app)
 
+	go router.HandleBroadCasts()
+
 	fmt.Printf("Listening on http://localhost:%d\n", port)
 
 	log.Fatal(http.Serve(listener, nil))

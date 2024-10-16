@@ -7,6 +7,7 @@ import (
 )
 
 type PeerInfo struct {
+	ID     int
 	Peer   peer.AddrInfo
 	Alias  string
 	Avatar string
@@ -14,18 +15,23 @@ type PeerInfo struct {
 
 type PeerStore struct {
 	Peers      []PeerInfo
-	PeersMutex sync.Mutex
+	PeersMutex *sync.Mutex
+	NextID     int
 }
 
 func NewStore() *PeerStore {
-	return &PeerStore{}
+	return &PeerStore{
+		PeersMutex: &sync.Mutex{},
+		NextID:     0,
+	}
 }
 
 func (ps *PeerStore) AddPeer(peer peer.AddrInfo, alias, avatar string) {
 	ps.PeersMutex.Lock()
 	defer ps.PeersMutex.Unlock()
 
-	ps.Peers = append(ps.Peers, PeerInfo{Peer: peer, Alias: alias, Avatar: avatar})
+	ps.Peers = append(ps.Peers, PeerInfo{ID: ps.NextID, Peer: peer, Alias: alias, Avatar: avatar})
+	ps.NextID++
 }
 
 func (ps *PeerStore) RemovePeer(peer peer.AddrInfo) {

@@ -3,6 +3,7 @@ package msgs
 import (
 	"bufio"
 	"errors"
+	"fmt"
 
 	"github.com/kahono0/netfl/repo"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -10,7 +11,7 @@ import (
 
 var ErrUnknownMessageType = errors.New("unknown message type")
 
-var EOFDelim = byte(0)
+var EOFDelim = byte('\n')
 
 type MessageTypeID uint
 
@@ -93,6 +94,8 @@ func DecodeMessage(data []byte) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(data)
 
 	return &Message{
 		Type: *msgType,

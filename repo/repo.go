@@ -68,6 +68,7 @@ func isPlayableByWebBrowser(mime *mimetype.MIME) bool {
 }
 
 type Movie struct {
+	ID                     int
 	Name                   string
 	MovieUrl               string
 	MimeType               string
@@ -94,6 +95,7 @@ type MovieRepo struct {
 	Log      bool
 	Movies   []Movie
 	Loaded   bool
+	NextID   int
 }
 
 func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
@@ -102,6 +104,7 @@ func NewMovieRepo(dir, hostAddr string, log bool) *MovieRepo {
 		HostAddr: hostAddr,
 		Log:      log,
 		Loaded:   false,
+		NextID:   0,
 	}
 
 	go repo.Load()
@@ -142,6 +145,7 @@ func (r *MovieRepo) Load() error {
 		}
 
 		movie := Movie{
+			ID:                     r.NextID,
 			Name:                   filepath.Base(path),
 			MovieUrl:               fmt.Sprintf("%s/movies%s", r.HostAddr, path[len(r.Dir):]),
 			MimeType:               mimeTypeStr,
@@ -157,7 +161,7 @@ func (r *MovieRepo) Load() error {
 			Path:  path,
 		})
 
-		r.Movies = append(r.Movies, movie)
+		r.AddMovie(movie)
 
 		return nil
 	})
@@ -169,6 +173,12 @@ func (r *MovieRepo) Load() error {
 	r.Loaded = true
 
 	return nil
+}
+
+func (r *MovieRepo) AddMovie(m Movie) {
+	m.ID = r.NextID
+	r.Movies = append(r.Movies, m)
+	r.NextID++
 }
 
 func (r *MovieRepo) UpdateMovie(m Movie) {
@@ -222,8 +232,7 @@ func (r *MovieRepo) AddMovies(movies []Movie) {
 		if m.Hash == "" || r.ContainsFile(m.Hash) {
 			continue
 		}
-
-		r.Movies = append(r.Movies, m)
+		r.AddMovie(m)
 	}
 }
 

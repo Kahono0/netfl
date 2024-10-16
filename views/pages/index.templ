@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"fmt"
 	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/repo"
 )
@@ -12,40 +13,39 @@ templ Layout() {
 			<link rel="stylesheet" href="/static/output.css"/>
 			<style>
                :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb:214, 219, 220 ;
-}
+			--foreground-rgb: 0, 0, 0;
+			--background-start-rgb: 255, 255, 255;
+			--background-end-rgb:214, 219, 220 ;
+			}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
+			@media (prefers-color-scheme: dark) {
+			:root {
+				--foreground-rgb: 255, 255, 255;
+				--background-start-rgb: 0, 0, 0;
+				--background-end-rgb: 0, 0, 0;
+			}
+			}
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
-
-
+			body {
+			color: rgb(var(--foreground-rgb));
+			background: linear-gradient(
+				to bottom,
+				transparent,
+				rgb(var(--background-end-rgb))
+				)
+				rgb(var(--background-start-rgb));
+			}
     </style>
 		</head>
 		<body class="h-screen w-screen">
 			{ children... }
 		</body>
+		<script src="/static/app.js"></script>
 	</html>
 }
 
 templ OnlineUser(peer p2p.PeerInfo) {
-	<div class="hs-tooltip inline-block">
+	<div id={ fmt.Sprintf("p-%d", peer.ID) } class="hs-tooltip inline-block">
 		<a class="hs-tooltip-toggle relative inline-block" href="#">
 			<img class="inline-block size-[30px] rounded-full" src={ peer.Avatar } alt="Avatar"/>
 			<span class="absolute bottom-0 end-0 block size-3 rounded-full ring-2 ring-white bg-teal-400 dark:ring-neutral-900"></span>
@@ -57,7 +57,7 @@ templ OnlineUser(peer p2p.PeerInfo) {
 }
 
 templ Movie(m repo.Movie) {
-	<div class="w-[500px] h-[450px] border-2">
+	<div id={ fmt.Sprintf("m-%d", m.ID) } class="w-[500px] h-[450px] border-2">
 		<div class="w-full h-80">
 			<img class="w-full h-full object-cover" src={ m.ThumbNailUrl } alt="Card Image"/>
 		</div>
@@ -83,7 +83,7 @@ templ Movie(m repo.Movie) {
 templ Aside(peers []p2p.PeerInfo) {
 	<div class="w-1/6 border-r-2 p-8">
 		Online users
-		<div class="flex flex-col gap-2">
+		<div id="peers" class="flex flex-col gap-2">
 			for _, peer := range peers {
 				if peer.Alias != "" {
 					@OnlineUser(peer)
@@ -95,8 +95,7 @@ templ Aside(peers []p2p.PeerInfo) {
 
 templ Content(movies []repo.Movie) {
 	<div class="w-5/6">
-		Movies
-		<div class="h-full flex flex-start flex-wrap gap-8 overflow-auto pb-12">
+		<div id="movies" class="h-full flex flex-start flex-wrap gap-8 overflow-auto pb-12">
 			for _, m := range movies {
 				@Movie(m)
 			}

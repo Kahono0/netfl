@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/msgs"
 	"github.com/kahono0/netfl/pkg/p2p"
+	"github.com/kahono0/netfl/router"
 	"github.com/kahono0/netfl/utils"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -127,7 +129,19 @@ func (h *Handler) HandleInitialResponse(msg *msgs.Message, stream network.Stream
 	fmt.Printf("Received alias: %s, avatar: %s\n", data.Alias, data.Avatar)
 
 	peerStore := h.GetPeerStore()
-	_ = peerStore.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
+	peer := peerStore.UpdatePeer(stream.Conn().RemotePeer(), data.Alias, data.Avatar)
+	if peer != nil {
+		peerHTML := &router.PeerInfoHTML{
+			PeerInfo: *peer,
+		}
+
+		wsAddElement := &router.WsAddElement{
+			ParentID: "peers",
+			Content:  peerHTML,
+		}
+
+		wsAddElement.Broadcast()
+	}
 
 	h.GetMovieRepo().AddMovies(data.Movies)
 
@@ -140,6 +154,7 @@ func (h *Handler) HandleNewPeer(peer peer.AddrInfo) error {
 }
 
 func (h *Handler) Ping(peer peer.AddrInfo) error {
+	fmt.Println("...")
 	msg, err := msgs.NewMessage(msgs.Ping, []byte("\n"))
 	if err != nil {
 		return err
@@ -147,6 +162,7 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 
 	s, err := p2p.CreateStream(h.Host, peer, h.Config.ProtocolID)
 	if err != nil {
+		fmt.Println("!!!")
 		return err
 	}
 
@@ -154,13 +170,24 @@ func (h *Handler) Ping(peer peer.AddrInfo) error {
 }
 
 func (h *Handler) PingPeers() {
-	peerStore := h.GetPeerStore()
-	ps := peerStore.Peers
-	for _, peer := range ps {
-		err := h.Ping(peer.Peer)
-		if err != nil {
-			peerStore.RemovePeer(peer.Peer)
+	for {
+		peerStore := h.GetPeerStore()
+		fmt.Printf("Pinging %d peers\n", len(peerStore.Peers))
+		ps := peerStore.Peers
+		for _, peer := range ps {
+			err := h.Ping(peer.Peer)
+			if err != nil {
+				removePeer := &router.WsRemoveElement{
+					ID:      peer.ID,
+					Element: "p",
+				}
+				removePeer.Broadcast()
+
+				peerStore.RemovePeer(peer.Peer)
+			}
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 }
 
