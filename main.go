@@ -9,6 +9,7 @@ import (
 
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/handlers"
+	"github.com/kahono0/netfl/pkg/ws"
 	"github.com/kahono0/netfl/router"
 	"github.com/kahono0/netfl/utils"
 )
@@ -60,7 +61,7 @@ func main() {
 
 	router.SetUpRoutes(app)
 
-	go router.HandleBroadCasts()
+	go ws.HandleBroadCasts()
 
 	fmt.Printf("Listening on http://localhost:%d\n", port)
 

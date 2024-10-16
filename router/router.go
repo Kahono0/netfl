@@ -8,13 +8,14 @@ import (
 	"github.com/kahono0/netfl/pkg/app"
 	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/pkg/repo/movies"
+	"github.com/kahono0/netfl/pkg/ws"
 	"github.com/kahono0/netfl/utils"
 	"github.com/kahono0/netfl/views/pages"
 )
 
 func SetUpRoutes(app *app.App) {
-	http.HandleFunc("/ws", handleWebSocket)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.HandleFunc("/ws", ws.Handle)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("~/.netfl/static"))))
 	http.HandleFunc("/", index(app))
 	http.HandleFunc("/movies", getMovies(app.GetMovieRepo()))
 	http.HandleFunc("/peers", getPeers(app.GetPeerStore()))

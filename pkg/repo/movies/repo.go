@@ -69,6 +69,7 @@ func isPlayableByWebBrowser(mime *mimetype.MIME) bool {
 
 type Movie struct {
 	ID                     int
+	Owner                  int
 	Name                   string
 	MovieUrl               string
 	MimeType               string
@@ -107,7 +108,7 @@ func New(dir, hostAddr string, log bool) *MovieRepo {
 		NextID:   0,
 	}
 
-	go repo.Load()
+	repo.Load()
 
 	return repo
 }
@@ -118,7 +119,6 @@ func (r *MovieRepo) Load() error {
 	}
 
 	worker := NewThumbNailGenWorker(r)
-	worker.Start()
 
 	defer worker.Close()
 
@@ -181,6 +181,28 @@ func (r *MovieRepo) AddMovie(m Movie) {
 	r.NextID++
 }
 
+func (r *MovieRepo) AddMovies(owner int, movies []Movie) {
+	for _, m := range movies {
+		if m.Hash == "" || r.ContainsFile(m.Hash) {
+			continue
+		}
+		m.Owner = owner
+		r.AddMovie(m)
+	}
+}
+
+func (r *MovieRepo) AddFromJSON(owner int, jsonStr string) error {
+	var movies []Movie
+	err := json.Unmarshal([]byte(jsonStr), &movies)
+	if err != nil {
+		return err
+	}
+
+	r.AddMovies(owner, movies)
+
+	return nil
+}
+
 func (r *MovieRepo) UpdateMovie(m Movie) {
 	for i, movie := range r.Movies {
 		if movie.Hash == m.Hash {
@@ -196,6 +218,22 @@ func (r *MovieRepo) GetMovies() []Movie {
 	}
 
 	return r.Movies
+}
+
+func (r *MovieRepo) RemoveForOwner(ownerID int) []int {
+	var newMovies []Movie
+	var removedIDs []int
+	for _, m := range r.Movies {
+		if m.Owner != ownerID {
+			newMovies = append(newMovies, m)
+		} else {
+			removedIDs = append(removedIDs, m.ID)
+		}
+	}
+
+	r.Movies = newMovies
+
+	return removedIDs
 }
 
 func (r *MovieRepo) String() string {
@@ -221,31 +259,9 @@ func (r *MovieRepo) ContainsFile(hash string) bool {
 		if m.Hash == hash {
 			return true
 		}
-
 	}
 
 	return false
-}
-
-func (r *MovieRepo) AddMovies(movies []Movie) {
-	for _, m := range movies {
-		if m.Hash == "" || r.ContainsFile(m.Hash) {
-			continue
-		}
-		r.AddMovie(m)
-	}
-}
-
-func (r *MovieRepo) AddFromJSON(jsonStr string) error {
-	var movies []Movie
-	err := json.Unmarshal([]byte(jsonStr), &movies)
-	if err != nil {
-		return err
-	}
-
-	r.AddMovies(movies)
-
-	return nil
 }
 
 func (r *MovieRepo) DetectMimeType(file string) {

@@ -15,7 +15,7 @@ func ExtractThumbnail(videoPath string, outputPath string, time string) error {
 	if _, err := os.Stat(outputPath); err == nil {
 		return nil
 	}
-	cmd := exec.Command("ffmpeg", "-ss", time, "-i", videoPath, "-vframes", "1", outputPath)
+	cmd := exec.Command("ffmpeg", "-ss", time, "-i", videoPath, "-vframes", "1", "500x500", outputPath)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error extracting thumbnail: %w", err)

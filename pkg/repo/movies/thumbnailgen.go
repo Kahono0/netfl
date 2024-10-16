@@ -2,7 +2,10 @@ package movies
 
 import (
 	"fmt"
+	"sync"
 )
+
+const MAX_PROCESS = 5
 
 type Job struct {
 	Movie Movie
@@ -13,14 +16,23 @@ type ThumbNailGenWorker struct {
 	repo     *MovieRepo
 	jobQueue chan Job
 	done     chan bool
+	wg       *sync.WaitGroup
 }
 
 func NewThumbNailGenWorker(repo *MovieRepo) *ThumbNailGenWorker {
-	return &ThumbNailGenWorker{
+	worker := &ThumbNailGenWorker{
 		repo:     repo,
 		jobQueue: make(chan Job),
 		done:     make(chan bool),
+		wg:       &sync.WaitGroup{},
 	}
+
+	for i := 0; i < MAX_PROCESS; i++ {
+		worker.wg.Add(1)
+		go worker.Start()
+	}
+
+	return worker
 }
 
 func (t *ThumbNailGenWorker) Start() {
