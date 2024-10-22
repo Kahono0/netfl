@@ -28,6 +28,8 @@ func parseFlags() app.Config {
 	alias := utils.Whoami()
 	flag.StringVar(&f.Alias, "alias", alias, "Alias for this peer")
 
+	flag.BoolVar(&f.Log, "log", false, "Log to file")
+
 	flag.Parse()
 
 	return f

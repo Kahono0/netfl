@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 
+	"github.com/kahono0/netfl/pkg/logger"
 	"github.com/kahono0/netfl/pkg/p2p"
 	"github.com/kahono0/netfl/pkg/repo/movies"
 	"github.com/kahono0/netfl/utils"
@@ -27,6 +28,9 @@ type Config struct {
 
 	// host addr
 	HostAddr string
+
+	// log?
+	Log bool
 }
 
 type App struct {
@@ -38,6 +42,8 @@ type App struct {
 }
 
 func New(cfg Config, avatar, alias string, port int, newStreamHandler func(stream network.Stream)) (*App, error) {
+	logger.New(cfg.Log)
+
 	hostAddr := fmt.Sprintf("http://%s:%d", utils.GetPrivateIP(), port)
 
 	cfg.HostAddr = hostAddr

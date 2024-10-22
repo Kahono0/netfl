@@ -2,7 +2,6 @@ package movies
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"encoding/json"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/kahono0/netfl/pkg/logger"
 	"github.com/kahono0/netfl/utils"
 )
 
@@ -80,6 +80,7 @@ type Movie struct {
 }
 
 func (m *Movie) CreateThumbnail(hostAdrr string, path string, dir string) error {
+	logger.Log(fmt.Sprintf("Creating thumbnail for %s", path))
 	outputFile := fmt.Sprintf("%s.thumb.jpg", path)
 	err := utils.ExtractThumbnail(path, outputFile, thumbNailTime)
 	if err != nil {
@@ -139,7 +140,7 @@ func (r *MovieRepo) Load() error {
 		mimeTypeStr := getMimeType(mime)
 		if mimeTypeStr == "" {
 			if r.Log {
-				log.Println("Skipping file", path, "because it has an unsupported mime type:", mime.String())
+				logger.Log("Skipping file" + path + "because it has an unsupported mime type:" + mime.String())
 			}
 			return nil
 		}
@@ -152,6 +153,8 @@ func (r *MovieRepo) Load() error {
 			IsAcceptedMimeType:     true,
 			IsPlayableByWebBrowser: isPlayableByWebBrowser(mime),
 		}
+
+		logger.Log(fmt.Sprintf("Adding movie %s", movie.Name))
 
 		hash := utils.GetFileHash(path)
 		movie.Hash = hash

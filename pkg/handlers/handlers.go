@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kahono0/netfl/pkg/app"
+	"github.com/kahono0/netfl/pkg/logger"
 	"github.com/kahono0/netfl/pkg/msgs"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -59,7 +60,7 @@ func (h *Handler) HandlePing(msg *msgs.Message, stream network.Stream) error {
 }
 
 func (h *Handler) HandleSample(msg *msgs.Message, stream network.Stream) error {
-	fmt.Printf("\n\nReceived sample message %s\n\n", string(msg.Data))
+	logger.Log(fmt.Sprintf("Received sample message %s", string(msg.Data)))
 	return nil
 }
 
@@ -70,12 +71,12 @@ func (h *Handler) HandleNewPeer(peer peer.AddrInfo) error {
 func handleMsg(rw *bufio.ReadWriter, stream network.Stream) {
 	msg, err := msgs.NewFromReader(rw.Reader)
 	if err != nil {
-		fmt.Println("Error reading message")
+		logger.Log(fmt.Sprintf("Error reading message: %s", err))
 		return
 	}
 	err = MsgHandler.HandleMessage(msg, stream)
 	if err != nil {
-		fmt.Println("Error handling message")
+		logger.Log(fmt.Sprintf("Error handling message: %s", err))
 		return
 	}
 }
